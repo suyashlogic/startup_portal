@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="loginApp">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Sign In — IncuPortal</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+</head>
+<body class="p-0 m-0">
+
+<div class="auth-page" ng-controller="LoginCtrl">
+
+  <div class="auth-left d-none d-lg-flex flex-column align-items-center justify-content-center">
+    <div class="al-content">
+      <div class="mb-3" style="font-size:3.5rem;">🎓</div>
+      <div class="al-logo">IncuPortal</div>
+      <div class="al-tag">Student Startup Incubation System</div>
+
+      <!-- Stats row -->
+      <div class="row g-2 mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,.2);">
+        <div class="col-4 text-center">
+          <div style="font-size:1.5rem;font-weight:800;color:#fff;">50+</div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;">Startups</div>
+        </div>
+        <div class="col-4 text-center">
+          <div style="font-size:1.5rem;font-weight:800;color:#fff;">20+</div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;">Mentors</div>
+        </div>
+        <div class="col-4 text-center">
+          <div style="font-size:1.5rem;font-weight:800;color:#fff;">₹5L+</div>
+          <div style="font-size:.68rem;color:rgba(255,255,255,.6);text-transform:uppercase;letter-spacing:.06em;">Funded</div>
+        </div>
+      </div>
+
+      <!-- Feature list -->
+      <div class="d-flex flex-column gap-2 mt-4">
+        <div class="d-flex align-items-center gap-2" style="color:rgba(255,255,255,.85);font-size:.85rem;">
+          <i class="bi bi-check-circle-fill" style="color:#4ade80;font-size:.85rem;"></i> Submit &amp; track startup ideas
+        </div>
+        <div class="d-flex align-items-center gap-2" style="color:rgba(255,255,255,.85);font-size:.85rem;">
+          <i class="bi bi-check-circle-fill" style="color:#4ade80;font-size:.85rem;"></i> Get matched with expert mentors
+        </div>
+        <div class="d-flex align-items-center gap-2" style="color:rgba(255,255,255,.85);font-size:.85rem;">
+          <i class="bi bi-check-circle-fill" style="color:#4ade80;font-size:.85rem;"></i> Apply for incubation funding
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────── Right panel ────── -->
+  <div class="auth-right">
+
+    <div class="text-center mb-4 d-lg-none">
+      <span style="font-size:2rem;">🎓</span>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:1.4rem;font-weight:800;color:var(--ip-red);">IncuPortal</div>
+    </div>
+
+    <h2 class="ar-title">Welcome back</h2>
+    <p class="ar-sub">Sign in to your account to continue</p>
+
+    <%- include('../layouts/flash') %>
+
+    <p class="text-uppercase fw-semibold mb-2" style="font-size:.68rem;letter-spacing:.1em;color:#9ca3af;">Quick sign-in with Google</p>
+    <div class="d-flex flex-column gap-2 mb-1">
+      <a href="/auth/google/student" class="g-btn g-btn-student">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 19.7-7.7 19.7-20 0-1.3-.1-2.7-.2-3z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3c-7.6 0-14.2 4.3-17.7 11.7z"/><path fill="#FBBC05" d="M24 43c5.8 0 10.9-1.9 14.9-5.2l-6.9-5.7C29.9 33.9 27.1 35 24 35c-6 0-11.1-4-12.9-9.5l-7 5.4C7.9 38.7 15.3 43 24 43z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.3-2.3 4.3-4.3 5.8l6.9 5.7c4-3.7 6.6-9.2 6.6-16 0-1.3-.1-2.7-.2-3z"/></svg>
+        Continue as Student
+        <span class="badge badge-student ms-auto">👨‍🎓 Student</span>
+      </a>
+      <a href="/auth/google/mentor" class="g-btn g-btn-mentor">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 19.7-7.7 19.7-20 0-1.3-.1-2.7-.2-3z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3c-7.6 0-14.2 4.3-17.7 11.7z"/><path fill="#FBBC05" d="M24 43c5.8 0 10.9-1.9 14.9-5.2l-6.9-5.7C29.9 33.9 27.1 35 24 35c-6 0-11.1-4-12.9-9.5l-7 5.4C7.9 38.7 15.3 43 24 43z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.3-2.3 4.3-4.3 5.8l6.9 5.7c4-3.7 6.6-9.2 6.6-16 0-1.3-.1-2.7-.2-3z"/></svg>
+        Continue as Mentor
+        <span class="badge badge-mentor ms-auto">🧑‍💼 Mentor</span>
+      </a>
+    </div>
+
+    <div class="or-sep">or sign in with email</div>
+
+    <form name="loginForm" action="/auth/login" method="POST" novalidate ng-submit="submit()">
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold" for="email" style="font-size:.855rem;">Email address</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0">
+            <i class="bi bi-envelope text-secondary" style="font-size:.85rem;"></i>
+          </span>
+          <input type="email" id="email" name="email" ng-model="form.email"
+            class="form-control border-start-0 ps-0"
+            placeholder="you@college.edu" required
+            ng-pattern="/^[^\s@]+@[^\s@]+\.[^\s@]+$/"/>
+        </div>
+        <div class="f-err" ng-show="loginForm.email.$touched && loginForm.email.$error.required">
+          <i class="bi bi-exclamation-triangle-fill"></i> Email is required.
+        </div>
+        <div class="f-err" ng-show="loginForm.email.$touched && loginForm.email.$error.pattern">
+          <i class="bi bi-exclamation-triangle-fill"></i> Enter a valid email address.
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-1">
+          <label class="form-label fw-semibold mb-0" for="password" style="font-size:.855rem;">Password</label>
+          <a href="/auth/forgot-password" style="font-size:.78rem;">Forgot password?</a>
+        </div>
+        <div class="input-group pw-wrap">
+          <span class="input-group-text bg-light border-end-0">
+            <i class="bi bi-lock text-secondary" style="font-size:.85rem;"></i>
+          </span>
+          <input ng-attr-type="{{ showPw ? 'text' : 'password' }}"
+            id="password" name="password" ng-model="form.password"
+            class="form-control border-start-0 ps-0"
+            placeholder="••••••••" required style="padding-right:2.75rem;"/>
+          <button type="button" class="pw-eye" ng-click="showPw=!showPw">
+            <i ng-class="showPw ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+          </button>
+        </div>
+        <div class="f-err" ng-show="loginForm.password.$touched && loginForm.password.$error.required">
+          <i class="bi bi-exclamation-triangle-fill"></i> Password is required.
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-bold"
+        style="font-size:.95rem;letter-spacing:.03em;"
+        ng-disabled="loginForm.$invalid">
+        Sign In &nbsp;<i class="bi bi-arrow-right"></i>
+      </button>
+    </form>
+
+    <p class="text-center mt-4 mb-0" style="font-size:.875rem;color:#6b7280;">
+      Don't have an account?
+      <a href="/auth/register" class="fw-semibold text-decoration-none">Register here</a>
+    </p>
+  </div><!-- /auth-right -->
+</div>
+
+<script>
+angular.module('loginApp',[]).controller('LoginCtrl',['$scope',function($s){
+  $s.form={}; $s.showPw=false;
+  $s.submit=function(){
+    if($s.loginForm.$invalid){
+      angular.forEach($s.loginForm.$error,function(f){angular.forEach(f,function(e){e.$setTouched();});});
+      return;
+    }
+    document.querySelector('form[name="loginForm"]').submit();
+  };
+}]);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+</body>
+</html>

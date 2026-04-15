@@ -1,0 +1,56 @@
+<nav class="flex-grow-1 pt-2">
+  <div class="sidebar-section">Navigation</div>
+
+  <% if (user.role === 'student') { %>
+    <a href="/student/dashboard"
+       class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/student/dashboard' ? 'active' : '' %>">
+      <i class="bi bi-house-door s-icon"></i> Dashboard
+    </a>
+    <a href="/student/startup/new"
+       class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/student/startup/new' ? 'active' : '' %>">
+      <i class="bi bi-lightbulb s-icon"></i> Submit Idea
+    </a>
+    <a href="/student/startups" class="sidebar-link">
+      <i class="bi bi-rocket s-icon"></i> My Startups
+    </a>
+
+  <% } else if (user.role === 'admin') { %>
+    <a href="/admin/dashboard" class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/admin/dashboard' ? 'active' : '' %>">
+      <i class="bi bi-house-door s-icon"></i> Dashboard
+    </a>
+    <div class="sidebar-section mt-2">Management</div>
+    <a href="/admin/startups" class="sidebar-link">
+      <i class="bi bi-rocket-takeoff s-icon"></i> Startups
+    </a>
+    <a href="/admin/funding" class="sidebar-link">
+      <i class="bi bi-cash-coin s-icon"></i> Funding
+    </a>
+    <a href="/admin/users" class="sidebar-link">
+      <i class="bi bi-people s-icon"></i> Users
+    </a>
+
+  <% } else if (user.role === 'mentor') { %>
+    <a href="/mentor/dashboard" class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/mentor/dashboard' ? 'active' : '' %>">
+      <i class="bi bi-house-door s-icon"></i> Dashboard
+    </a>
+    <a href="/mentor/feedback" class="sidebar-link">
+      <i class="bi bi-chat-square-text s-icon"></i> Feedback
+    </a>
+  <% } %>
+</nav>
+
+<!-- User footer -->
+<div class="sidebar-footer">
+  <div class="d-flex align-items-center gap-2 mb-2">
+    <div class="avatar-circle"><%= user.name.charAt(0).toUpperCase() %></div>
+    <div style="min-width:0;">
+      <div class="fw-semibold text-truncate" style="font-size:.845rem;color:#111;"><%= user.name %></div>
+      <span class="badge badge-<%= user.role %>" style="font-size:.6rem;padding:.2em .5em;"><%= user.role %></span>
+    </div>
+  </div>
+  <a href="/auth/logout"
+     class="btn btn-outline-secondary btn-sm w-100 d-flex align-items-center justify-content-center gap-1"
+     style="font-size:.78rem;">
+    <i class="bi bi-box-arrow-right"></i> Logout
+  </a>
+</div>

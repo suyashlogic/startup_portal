@@ -1,0 +1,7 @@
+<%/* views/layouts/flash.ejs */%>
+<% if (successMsg && successMsg.length > 0) { %>
+  <div class="alert alert-success">✅ <%= successMsg[0] %></div>
+<% } %>
+<% if (errorMsg && errorMsg.length > 0) { %>
+  <div class="alert alert-error">⚠️ <%= errorMsg[0] %></div>
+<% } %>

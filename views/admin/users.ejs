@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Manage Users — IncuPortal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../layouts/sidebar') %>
+
+  <main class="app-main">
+    <div class="container-fluid px-4">
+
+      <!-- ── Page Hero ── -->
+      <div class="page-hero d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <h1><i class="bi bi-people me-2"></i>Manage Users</h1>
+          <p>Change roles or review all registered users</p>
+        </div>
+        <span class="badge bg-white text-primary fw-semibold px-3 py-2" style="font-size:.8rem;border-radius:20px;">
+          <i class="bi bi-person-check me-1"></i><%= users.length %> user<%= users.length !== 1 ? 's' : '' %>
+        </span>
+      </div>
+
+      <%- include('../layouts/flash') %>
+
+      <!-- ── Summary stat strip ── -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:var(--ip-red-pale);">
+                <i class="bi bi-people text-primary" style="font-size:1.1rem;"></i>
+              </div>
+              <div>
+                <div class="stat-val"><%= users.length %></div>
+                <div class="stat-lbl">Total Users</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-top-color:#3b82f6;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:#eff6ff;">
+                <i class="bi bi-mortarboard" style="font-size:1.1rem;color:#3b82f6;"></i>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#3b82f6;"><%= users.filter(u => u.role === 'student').length %></div>
+                <div class="stat-lbl">Students</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-top-color:#7c3aed;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:#f5f3ff;">
+                <i class="bi bi-person-badge" style="font-size:1.1rem;color:#7c3aed;"></i>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#7c3aed;"><%= users.filter(u => u.role === 'mentor').length %></div>
+                <div class="stat-lbl">Mentors</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-top-color:#9d174d;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:#fce7f3;">
+                <i class="bi bi-shield-check" style="font-size:1.1rem;color:#9d174d;"></i>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#9d174d;"><%= users.filter(u => u.role === 'admin').length %></div>
+                <div class="stat-lbl">Admins</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Search + filter bar ── -->
+      <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+        <div class="card-body py-3 px-4">
+          <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-5">
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0">
+                  <i class="bi bi-search text-muted" style="font-size:.85rem;"></i>
+                </span>
+                <input type="text" id="userSearch" class="form-control border-start-0 ps-0"
+                  placeholder="Search by name or email…" style="font-size:.855rem;"/>
+              </div>
+            </div>
+            <div class="col-6 col-md-3">
+              <select id="roleFilter" class="form-select" style="font-size:.845rem;">
+                <option value="">All roles</option>
+                <option value="student">Student</option>
+                <option value="mentor">Mentor</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="col-6 col-md-4 d-flex align-items-center justify-content-end gap-2">
+              <span class="text-muted" id="userCount" style="font-size:.78rem;white-space:nowrap;"></span>
+              <button class="btn btn-outline-secondary btn-sm" id="resetUserFilters" style="font-size:.78rem;display:none;">
+                <i class="bi bi-x-lg me-1"></i>Reset
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Table card ── -->
+      <div class="card border-0 shadow-sm" style="border-radius:14px;">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="usersTable">
+              <thead>
+                <tr>
+                  <th class="ps-4" style="width:5%;">#</th>
+                  <th style="width:25%;">User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Auth</th>
+                  <th>Registered</th>
+                  <th class="text-end pe-4">Change role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% users.forEach((u, i) => { %>
+                <tr class="user-row"
+                  data-name="<%= u.name.toLowerCase() %>"
+                  data-email="<%= u.email.toLowerCase() %>"
+                  data-role="<%= u.role %>">
+                  <td class="ps-4 text-muted" style="font-size:.8rem;"><%= i + 1 %></td>
+                  <td>
+                    <div class="d-flex align-items-center gap-3">
+                      <div class="avatar-circle flex-shrink-0" style="width:36px;height:36px;font-size:.88rem;">
+                        <%= u.name.charAt(0).toUpperCase() %>
+                      </div>
+                      <div>
+                        <div class="fw-semibold" style="font-size:.875rem;color:#111;"><%= u.name %></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="text-muted" style="font-size:.845rem;"><%= u.email %></span>
+                  </td>
+                  <td>
+                    <span class="badge badge-<%= u.role %> d-inline-flex align-items-center gap-1">
+                      <% if (u.role === 'student') { %><i class="bi bi-mortarboard-fill" style="font-size:.6rem;"></i>
+                      <% } else if (u.role === 'mentor') { %><i class="bi bi-person-badge-fill" style="font-size:.6rem;"></i>
+                      <% } else { %><i class="bi bi-shield-fill" style="font-size:.6rem;"></i><% } %>
+                      <%= u.role %>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge d-inline-flex align-items-center gap-1"
+                      style="background:#f1f5f9;color:#475569;font-size:.68rem;">
+                      <% if (u.auth_provider === 'google') { %>
+                        <i class="bi bi-google" style="font-size:.65rem;"></i>
+                      <% } else { %>
+                        <i class="bi bi-envelope" style="font-size:.65rem;"></i>
+                      <% } %>
+                      <%= u.auth_provider %>
+                    </span>
+                  </td>
+                  <td>
+                    <span class="text-muted" style="font-size:.8rem;">
+                      <i class="bi bi-calendar3 me-1" style="font-size:.72rem;"></i>
+                      <%= new Date(u.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %>
+                    </span>
+                  </td>
+                  <td class="text-end pe-4">
+                    <% if (u.role !== 'admin') { %>
+                      <form action="/admin/users/<%= u.id %>/role" method="POST"
+                        class="d-flex align-items-center justify-content-end gap-2">
+                        <select name="role" class="form-select form-select-sm"
+                          style="width:auto;font-size:.78rem;padding:.3rem .6rem;">
+                          <option value="student" <%= u.role === 'student' ? 'selected' : '' %>>👨‍🎓 Student</option>
+                          <option value="mentor"  <%= u.role === 'mentor'  ? 'selected' : '' %>>🧑‍💼 Mentor</option>
+                          <option value="admin"   <%= u.role === 'admin'   ? 'selected' : '' %>>🛡 Admin</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm fw-semibold" style="font-size:.75rem;padding:.3rem .7rem;">
+                          <i class="bi bi-check-lg me-1"></i>Save
+                        </button>
+                      </form>
+                    <% } else { %>
+                      <span class="text-muted d-flex align-items-center justify-content-end gap-1" style="font-size:.8rem;">
+                        <i class="bi bi-shield-fill" style="color:#9d174d;font-size:.75rem;"></i> Admin (you)
+                      </span>
+                    <% } %>
+                  </td>
+                </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="px-4 py-2 d-flex align-items-center justify-content-between"
+            style="border-top:1px solid #e3e7ef;background:#fafbfc;border-radius:0 0 14px 14px;">
+            <span class="text-muted" style="font-size:.78rem;" id="tableFooterCount">
+              <strong><%= users.length %></strong> user<%= users.length !== 1 ? 's' : '' %> registered
+            </span>
+            <span class="text-muted" style="font-size:.78rem;">
+              <i class="bi bi-info-circle me-1"></i>Admin accounts cannot have their role changed
+            </span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+  const rows    = document.querySelectorAll('.user-row');
+  const search  = document.getElementById('userSearch');
+  const filter  = document.getElementById('roleFilter');
+  const count   = document.getElementById('userCount');
+  const reset   = document.getElementById('resetUserFilters');
+  const footer  = document.getElementById('tableFooterCount');
+
+  function applyFilter() {
+    const q  = search ? search.value.toLowerCase().trim() : '';
+    const r  = filter ? filter.value : '';
+    const hasFilter = q || r;
+    let visible = 0;
+
+    rows.forEach(row => {
+      const nameMatch  = row.dataset.name.includes(q);
+      const emailMatch = row.dataset.email.includes(q);
+      const roleMatch  = !r || row.dataset.role === r;
+      const show = (nameMatch || emailMatch) && roleMatch;
+      row.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    if (count)  count.textContent  = visible + ' result' + (visible !== 1 ? 's' : '');
+    if (reset)  reset.style.display = hasFilter ? '' : 'none';
+    if (footer) footer.innerHTML = '<strong>' + visible + '</strong> user' + (visible !== 1 ? 's' : '') + ' shown';
+  }
+
+  if (search) search.addEventListener('input', applyFilter);
+  if (filter) filter.addEventListener('change', applyFilter);
+  if (reset)  reset.addEventListener('click', () => {
+    if (search) search.value = '';
+    if (filter) filter.value = '';
+    applyFilter();
+  });
+
+  applyFilter();
+})();
+</script>
+</body>
+</html>

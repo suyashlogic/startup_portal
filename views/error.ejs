@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %> — IncuPortal</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<% if (user) { %>
+<div class="app-layout">
+  <%- include('layouts/sidebar') %>
+  <main class="main-content">
+    <div class="empty-state" style="padding-top: 5rem;">
+      <div class="icon">⚠️</div>
+      <h3><%= title %></h3>
+      <p><%= message %></p>
+      <a href="/" class="btn btn-primary mt-2">Go to Dashboard</a>
+    </div>
+  </main>
+</div>
+<% } else { %>
+<div class="auth-page">
+  <div class="auth-card" style="text-align:center;">
+    <div style="font-size:4rem; margin-bottom:1rem;">⚠️</div>
+    <h2><%= title %></h2>
+    <p class="text-muted" style="margin: 1rem 0;"><%= message %></p>
+    <a href="/auth/login" class="btn btn-primary">Back to Login</a>
+  </div>
+</div>
+<% } %>
+</body>
+</html>

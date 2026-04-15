@@ -1,0 +1,33 @@
+<nav class="app-topbar">
+  <button class="btn btn-sm d-lg-none me-1 p-1" style="color:#fff;border:1px solid rgba(255,255,255,.3);" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+    <i class="bi bi-list fs-5"></i>
+  </button>
+  <span class="brand"><i class="bi bi-mortarboard-fill me-2"></i>IncuPortal</span>
+
+  <div class="top-right">
+    <span class="top-user-badge d-none d-sm-flex align-items-center gap-2">
+      <i class="bi bi-person-circle"></i>
+      <%= user.name %> &nbsp;·&nbsp;
+      <span class="badge badge-<%= user.role %> ms-1" style="font-size:.65rem;padding:.25em .5em;"><%= user.role %></span>
+    </span>
+    <a href="/auth/logout" class="btn btn-sm" style="color:rgba(255,255,255,.75);border:1px solid rgba(255,255,255,.25);font-size:.78rem;padding:.3rem .7rem;">
+      <i class="bi bi-box-arrow-right me-1"></i>Logout
+    </a>
+  </div>
+</nav>
+
+<!-- ── Desktop sidebar ── -->
+<aside class="app-sidebar d-none d-lg-flex">
+  <%- include('_sidebar-nav') %>
+</aside>
+
+<!-- ── Mobile offcanvas sidebar ── -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" style="width:260px;">
+  <div class="offcanvas-header" style="background:var(--ip-red,#8b1a1a);color:#fff;">
+    <h6 class="offcanvas-title fw-bold"><i class="bi bi-mortarboard-fill me-2"></i>IncuPortal</h6>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+  </div>
+  <div class="offcanvas-body p-0 d-flex flex-column">
+    <%- include('_sidebar-nav') %>
+  </div>
+</div>

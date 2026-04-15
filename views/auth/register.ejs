@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="registerApp">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Register — IncuPortal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+</head>
+<body class="p-0 m-0">
+
+<div class="auth-page" ng-controller="RegisterCtrl">
+
+  <!-- ────── Left panel ────── -->
+  <div class="auth-left d-none d-lg-flex flex-column align-items-center justify-content-center">
+    <div class="al-content">
+      <div class="mb-3" style="font-size:3.5rem;">🚀</div>
+      <div class="al-logo">Join IncuPortal</div>
+      <div class="al-tag">Turn your ideas into impactful startups</div>
+
+      <div class="d-flex flex-column gap-3 mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,.2);">
+        <div class="d-flex align-items-start gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+            style="width:36px;height:36px;background:rgba(255,255,255,.15);">
+            <i class="bi bi-lightbulb text-white" style="font-size:.9rem;"></i>
+          </div>
+          <div>
+            <div style="color:#fff;font-weight:600;font-size:.875rem;">Submit Ideas</div>
+            <div style="color:rgba(255,255,255,.65);font-size:.78rem;">Share your startup concept with the incubation cell</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-start gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+            style="width:36px;height:36px;background:rgba(255,255,255,.15);">
+            <i class="bi bi-people text-white" style="font-size:.9rem;"></i>
+          </div>
+          <div>
+            <div style="color:#fff;font-weight:600;font-size:.875rem;">Get Mentored</div>
+            <div style="color:rgba(255,255,255,.65);font-size:.78rem;">Connect with industry experts and alumni mentors</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-start gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+            style="width:36px;height:36px;background:rgba(255,255,255,.15);">
+            <i class="bi bi-cash-coin text-white" style="font-size:.9rem;"></i>
+          </div>
+          <div>
+            <div style="color:#fff;font-weight:600;font-size:.875rem;">Secure Funding</div>
+            <div style="color:rgba(255,255,255,.65);font-size:.78rem;">Apply for seed grants and incubation support</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ────── Right panel ────── -->
+  <div class="auth-right">
+
+    <div class="text-center mb-4 d-lg-none">
+      <span style="font-size:2rem;">🎓</span>
+      <div style="font-weight:800;font-size:1.4rem;color:var(--ip-red);">IncuPortal</div>
+    </div>
+
+    <h2 class="ar-title">Create your account</h2>
+    <p class="ar-sub">Join the startup incubation community</p>
+
+    <%- include('../layouts/flash') %>
+
+    <!-- Google OAuth -->
+    <p class="text-uppercase fw-semibold mb-2" style="font-size:.68rem;letter-spacing:.1em;color:#9ca3af;">Quick sign-up with Google</p>
+    <div class="d-flex flex-column gap-2 mb-1">
+      <a href="/auth/google/student" class="g-btn g-btn-student">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 19.7-7.7 19.7-20 0-1.3-.1-2.7-.2-3z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3c-7.6 0-14.2 4.3-17.7 11.7z"/><path fill="#FBBC05" d="M24 43c5.8 0 10.9-1.9 14.9-5.2l-6.9-5.7C29.9 33.9 27.1 35 24 35c-6 0-11.1-4-12.9-9.5l-7 5.4C7.9 38.7 15.3 43 24 43z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.3-2.3 4.3-4.3 5.8l6.9 5.7c4-3.7 6.6-9.2 6.6-16 0-1.3-.1-2.7-.2-3z"/></svg>
+        Register as Student
+        <span class="badge badge-student ms-auto">👨‍🎓 Student</span>
+      </a>
+      <a href="/auth/google/mentor" class="g-btn g-btn-mentor">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#4285F4" d="M44.5 20H24v8.5h11.8C34.7 33.9 30.1 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3 12.9 3 4 11.9 4 23s8.9 20 20 20c11 0 19.7-7.7 19.7-20 0-1.3-.1-2.7-.2-3z"/><path fill="#34A853" d="M6.3 14.7l7 5.1C15.1 16.1 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6.4-6.4C34.6 5.1 29.6 3 24 3c-7.6 0-14.2 4.3-17.7 11.7z"/><path fill="#FBBC05" d="M24 43c5.8 0 10.9-1.9 14.9-5.2l-6.9-5.7C29.9 33.9 27.1 35 24 35c-6 0-11.1-4-12.9-9.5l-7 5.4C7.9 38.7 15.3 43 24 43z"/><path fill="#EA4335" d="M44.5 20H24v8.5h11.8c-.8 2.3-2.3 4.3-4.3 5.8l6.9 5.7c4-3.7 6.6-9.2 6.6-16 0-1.3-.1-2.7-.2-3z"/></svg>
+        Register as Mentor
+        <span class="badge badge-mentor ms-auto">🧑‍💼 Mentor</span>
+      </a>
+    </div>
+
+    <div class="or-sep">or register with email</div>
+
+    <form name="registerForm" action="/auth/register" method="POST" novalidate ng-submit="submit()">
+
+      <!-- Name + Role row -->
+      <div class="row g-3 mb-3">
+        <div class="col-7">
+          <label class="form-label fw-semibold" style="font-size:.845rem;">Full name <span class="text-danger">*</span></label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-secondary" style="font-size:.85rem;"></i></span>
+            <input type="text" name="name" ng-model="form.name"
+              class="form-control border-start-0 ps-0" placeholder="John Doe"
+              required ng-minlength="2"/>
+          </div>
+          <div class="f-err" ng-show="registerForm.name.$touched && registerForm.name.$error.required">
+            <i class="bi bi-exclamation-triangle-fill"></i> Required.
+          </div>
+        </div>
+        <div class="col-5">
+          <label class="form-label fw-semibold" style="font-size:.845rem;">Role <span class="text-danger">*</span></label>
+          <select name="role" ng-model="form.role" class="form-select" required>
+            <option value="">Select…</option>
+            <option value="student">👨‍🎓 Student</option>
+            <option value="mentor">🧑‍💼 Mentor</option>
+          </select>
+          <div class="f-err" ng-show="registerForm.role.$touched && registerForm.role.$error.required">
+            <i class="bi bi-exclamation-triangle-fill"></i> Required.
+          </div>
+        </div>
+      </div>
+
+      <!-- Email -->
+      <div class="mb-3">
+        <label class="form-label fw-semibold" style="font-size:.845rem;">Email address <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-secondary" style="font-size:.85rem;"></i></span>
+          <input type="email" name="email" ng-model="form.email"
+            class="form-control border-start-0 ps-0"
+            placeholder="you@college.edu" required
+            ng-pattern="/^[^\s@]+@[^\s@]+\.[^\s@]+$/"/>
+        </div>
+        <div class="f-err" ng-show="registerForm.email.$touched && registerForm.email.$error.required"><i class="bi bi-exclamation-triangle-fill"></i> Required.</div>
+        <div class="f-err" ng-show="registerForm.email.$touched && registerForm.email.$error.pattern"><i class="bi bi-exclamation-triangle-fill"></i> Invalid email.</div>
+      </div>
+
+      <!-- Password + Confirm side by side -->
+      <div class="row g-3 mb-3">
+        <div class="col-6">
+          <label class="form-label fw-semibold" style="font-size:.845rem;">Password <span class="text-danger">*</span></label>
+          <div class="input-group pw-wrap">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-secondary" style="font-size:.85rem;"></i></span>
+            <input ng-attr-type="{{ showPw ? 'text' : 'password' }}"
+              name="password" ng-model="form.password"
+              class="form-control border-start-0 ps-0"
+              placeholder="Min. 8 chars" required ng-minlength="8"
+              ng-change="checkStrength()" style="padding-right:2.5rem;"/>
+            <button type="button" class="pw-eye" ng-click="showPw=!showPw">
+              <i ng-class="showPw ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+            </button>
+          </div>
+          <!-- Strength bar -->
+          <div ng-show="form.password" class="mt-1">
+            <div class="progress" style="height:3px;border-radius:99px;">
+              <div class="progress-bar" ng-style="{width:strength.pct,background:strength.color}" style="transition:width .3s,background .3s;"></div>
+            </div>
+            <small ng-show="form.password" ng-style="{color:strength.color}" class="fw-semibold" style="font-size:.7rem;">{{strength.label}}</small>
+          </div>
+          <div class="f-err" ng-show="registerForm.password.$touched && registerForm.password.$error.minlength"><i class="bi bi-exclamation-triangle-fill"></i> Min 8 chars.</div>
+        </div>
+        <div class="col-6">
+          <label class="form-label fw-semibold" style="font-size:.845rem;">Confirm <span class="text-danger">*</span></label>
+          <div class="input-group pw-wrap">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock-fill text-secondary" style="font-size:.85rem;"></i></span>
+            <input ng-attr-type="{{ showCp ? 'text' : 'password' }}"
+              name="confirmPassword" ng-model="form.confirmPassword"
+              class="form-control border-start-0 ps-0"
+              placeholder="Repeat" required style="padding-right:2.5rem;"/>
+            <button type="button" class="pw-eye" ng-click="showCp=!showCp">
+              <i ng-class="showCp ? 'bi bi-eye-slash' : 'bi bi-eye'"></i>
+            </button>
+          </div>
+          <div class="f-err" ng-show="registerForm.confirmPassword.$touched && form.confirmPassword && form.password !== form.confirmPassword"><i class="bi bi-exclamation-triangle-fill"></i> Mismatch.</div>
+          <div style="color:#1a7a4a;font-size:.72rem;margin-top:.25rem;font-weight:600;"
+               ng-show="registerForm.confirmPassword.$touched && form.confirmPassword && form.password === form.confirmPassword">
+            <i class="bi bi-check-circle-fill"></i> Passwords match
+          </div>
+        </div>
+      </div>
+
+      <!-- Password rules checklist -->
+      <div class="rounded-3 p-2 mb-3" style="background:#f8f9fa;border:1px solid #e5e7eb;" ng-show="form.password">
+        <div class="row g-1" style="font-size:.72rem;">
+          <div class="col-6" ng-class="{'text-success':pwRules.lower,'text-secondary':!pwRules.lower}">
+            <i ng-class="pwRules.lower ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Lowercase
+          </div>
+          <div class="col-6" ng-class="{'text-success':pwRules.upper,'text-secondary':!pwRules.upper}">
+            <i ng-class="pwRules.upper ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Uppercase
+          </div>
+          <div class="col-6" ng-class="{'text-success':pwRules.digit,'text-secondary':!pwRules.digit}">
+            <i ng-class="pwRules.digit ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Number
+          </div>
+          <div class="col-6" ng-class="{'text-success':pwRules.special,'text-secondary':!pwRules.special}">
+            <i ng-class="pwRules.special ? 'bi bi-check-circle-fill' : 'bi bi-circle'"></i> Special char
+          </div>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-bold"
+        style="font-size:.95rem;letter-spacing:.03em;"
+        ng-disabled="registerForm.$invalid || form.password !== form.confirmPassword || !isPasswordStrong()">
+        Create Account &nbsp;<i class="bi bi-arrow-right"></i>
+      </button>
+    </form>
+
+    <p class="text-center mt-3 mb-0" style="font-size:.875rem;color:#6b7280;">
+      Already have an account? <a href="/auth/login" class="fw-semibold text-decoration-none">Sign in</a>
+    </p>
+  </div>
+</div>
+
+<script>
+angular.module('registerApp',[]).controller('RegisterCtrl',['$scope',function($s){
+  $s.form={}; $s.showPw=false; $s.showCp=false;
+  $s.pwRules={lower:false,upper:false,digit:false,special:false};
+  $s.strength={pct:'0%',color:'#e2e8f0',label:''};
+
+  $s.checkStrength=function(){
+    var pw=$s.form.password||'';
+    $s.pwRules={lower:/[a-z]/.test(pw),upper:/[A-Z]/.test(pw),digit:/\d/.test(pw),special:/[@$!%*?&]/.test(pw)};
+    var sc=Object.values($s.pwRules).filter(Boolean).length;
+    if(pw.length>=8)sc=Math.min(sc+1,5);
+    var m=[{pct:'20%',color:'#c0392b',label:'Very weak'},{pct:'40%',color:'#e67e22',label:'Weak'},{pct:'60%',color:'#f1c40f',label:'Fair'},{pct:'80%',color:'#27ae60',label:'Strong'},{pct:'100%',color:'#1a7a4a',label:'Very strong'}];
+    $s.strength=m[Math.max(0,sc-1)]||m[0];
+  };
+  $s.isPasswordStrong=function(){var pw=$s.form.password||'';return pw.length>=8&&/[a-z]/.test(pw)&&/[A-Z]/.test(pw)&&/\d/.test(pw)&&/[@$!%*?&]/.test(pw);};
+  $s.submit=function(){
+    angular.forEach($s.registerForm,function(f){if(f&&typeof f.$setTouched==='function')f.$setTouched();});
+    if($s.registerForm.$invalid)return;
+    if($s.form.password!==$s.form.confirmPassword)return;
+    if(!$s.isPasswordStrong())return;
+    document.querySelector('form[name="registerForm"]').submit();
+  };
+}]);
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

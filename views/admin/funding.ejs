@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Funding Requests — IncuPortal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../layouts/sidebar') %>
+
+  <main class="app-main">
+    <div class="container-fluid px-4">
+
+      <!-- ── Page Hero ── -->
+      <div class="page-hero d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <h1><i class="bi bi-cash-coin me-2"></i>Funding Requests</h1>
+          <p>Review and approve student funding proposals</p>
+        </div>
+        <% if (requests.length > 0) { %>
+          <span class="badge bg-white text-primary fw-semibold px-3 py-2" style="font-size:.8rem;border-radius:20px;">
+            <i class="bi bi-collection me-1"></i><%= requests.length %> request<%= requests.length !== 1 ? 's' : '' %>
+          </span>
+        <% } %>
+      </div>
+
+      <%- include('../layouts/flash') %>
+
+      <!-- ── Summary stat strip ── -->
+      <% if (requests.length > 0) { %>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-top-color:#d97706;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:#fef9ec;">
+                <i class="bi bi-hourglass-split" style="font-size:1.1rem;color:#d97706;"></i>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#d97706;"><%= requests.filter(r => r.status === 'pending').length %></div>
+                <div class="stat-lbl">Pending</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-top-color:#1a7a4a;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:#f0fdf4;">
+                <i class="bi bi-check-circle" style="font-size:1.1rem;color:#1a7a4a;"></i>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#1a7a4a;"><%= requests.filter(r => r.status === 'approved').length %></div>
+                <div class="stat-lbl">Approved</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-top-color:#c0392b;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:#fee2e2;">
+                <i class="bi bi-x-circle" style="font-size:1.1rem;color:#c0392b;"></i>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#c0392b;"><%= requests.filter(r => r.status === 'rejected').length %></div>
+                <div class="stat-lbl">Rejected</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-top-color:#059669;">
+            <div class="d-flex align-items-center gap-3">
+              <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style="width:40px;height:40px;background:#ecfdf5;">
+                <i class="bi bi-currency-rupee" style="font-size:1.1rem;color:#059669;"></i>
+              </div>
+              <div>
+                <div class="stat-val" style="color:#059669;font-size:1.3rem;">
+                  ₹<%= Math.round(requests.filter(r=>r.status==='approved').reduce((a,r)=>a+Number(r.amount_requested),0)/1000) %>K
+                </div>
+                <div class="stat-lbl">Total Approved</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <% } %>
+
+      <!-- ── Table card ── -->
+      <div class="card border-0 shadow-sm" style="border-radius:14px;">
+        <div class="card-body p-0">
+
+          <% if (requests.length === 0) { %>
+            <div class="text-center py-5 px-4">
+              <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3"
+                style="width:72px;height:72px;background:#ecfdf5;">
+                <i class="bi bi-cash-stack" style="font-size:2rem;color:#059669;"></i>
+              </div>
+              <h5 class="fw-bold mb-1" style="color:#111;">No funding requests yet</h5>
+              <p class="text-muted mb-0" style="font-size:.875rem;max-width:360px;margin:0 auto;">
+                Students can submit funding requests once their startup is approved.
+              </p>
+            </div>
+
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead>
+                  <tr>
+                    <th class="ps-4" style="width:18%;">Startup</th>
+                    <th>Student</th>
+                    <th>Amount</th>
+                    <th style="width:20%;">Purpose</th>
+                    <th>Proposal</th>
+                    <th>Status</th>
+                    <th>Date</th>
+                    <th class="text-end pe-4">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% requests.forEach(r => { %>
+                  <tr>
+                    <td class="ps-4">
+                      <div class="fw-semibold" style="font-size:.875rem;color:#111;"><%= r.startup_title %></div>
+                    </td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <div class="avatar-circle flex-shrink-0" style="width:28px;height:28px;font-size:.72rem;">
+                          <%= r.student_name.charAt(0).toUpperCase() %>
+                        </div>
+                        <span style="font-size:.845rem;"><%= r.student_name %></span>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="fw-bold" style="font-size:.9rem;color:#111;">
+                        ₹<%= Number(r.amount_requested).toLocaleString('en-IN') %>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="text-muted" style="font-size:.82rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:200px;">
+                        <%= r.purpose %>
+                      </span>
+                    </td>
+
+                    <!-- ── Proposal file column ── -->
+                    <td>
+                      <% if (r.proposal_file) {
+                           const ext = r.proposal_file.split('.').pop().toLowerCase();
+                           const isImage = ['jpg','jpeg','png','webp'].includes(ext);
+                           const isPdf   = ext === 'pdf';
+                           const icon    = isImage ? 'bi-image'
+                                         : isPdf   ? 'bi-file-earmark-pdf'
+                                         :           'bi-file-earmark-text';
+                           const color   = isImage ? '#7c3aed'
+                                         : isPdf   ? '#c0392b'
+                                         :           '#1d4ed8';
+                      %>
+                        <a href="<%= r.proposal_file %>" target="_blank"
+                          class="d-inline-flex align-items-center gap-1 text-decoration-none fw-semibold"
+                          style="font-size:.8rem;color:<%= color %>;"
+                          title="View proposal">
+                          <i class="bi <%= icon %>" style="font-size:.95rem;"></i>
+                          View
+                        </a>
+                      <% } else { %>
+                        <span class="text-muted" style="font-size:.8rem;">
+                          <i class="bi bi-dash"></i>
+                        </span>
+                      <% } %>
+                    </td>
+
+                    <td>
+                      <span class="badge badge-<%= r.status %> d-inline-flex align-items-center gap-1">
+                        <% if (r.status === 'approved') { %><i class="bi bi-check-circle-fill" style="font-size:.6rem;"></i>
+                        <% } else if (r.status === 'rejected') { %><i class="bi bi-x-circle-fill" style="font-size:.6rem;"></i>
+                        <% } else { %><i class="bi bi-clock" style="font-size:.6rem;"></i><% } %>
+                        <%= r.status %>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="text-muted" style="font-size:.8rem;">
+                        <i class="bi bi-calendar3 me-1" style="font-size:.72rem;"></i>
+                        <%= new Date(r.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %>
+                      </span>
+                    </td>
+                    <td class="text-end pe-4">
+                      <% if (r.status === 'pending') { %>
+                        <div class="d-flex justify-content-end gap-2">
+                          <form action="/admin/funding/<%= r.id %>/status" method="POST" class="d-inline">
+                            <input type="hidden" name="status" value="approved"/>
+                            <button type="submit"
+                              class="btn btn-sm fw-semibold"
+                              style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-size:.75rem;padding:.3rem .7rem;"
+                              onclick="return confirm('Approve this funding request?')">
+                              <i class="bi bi-check-lg me-1"></i>Approve
+                            </button>
+                          </form>
+                          <form action="/admin/funding/<%= r.id %>/status" method="POST" class="d-inline">
+                            <input type="hidden" name="status" value="rejected"/>
+                            <button type="submit"
+                              class="btn btn-danger btn-sm fw-semibold"
+                              style="font-size:.75rem;padding:.3rem .7rem;"
+                              onclick="return confirm('Reject this funding request?')">
+                              <i class="bi bi-x-lg me-1"></i>Reject
+                            </button>
+                          </form>
+                        </div>
+                      <% } else { %>
+                        <span class="text-muted" style="font-size:.8rem;">—</span>
+                      <% } %>
+                    </td>
+                  </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="px-4 py-2 d-flex align-items-center justify-content-between"
+              style="border-top:1px solid #e3e7ef;background:#fafbfc;border-radius:0 0 14px 14px;">
+              <span class="text-muted" style="font-size:.78rem;">
+                <strong><%= requests.length %></strong> total request<%= requests.length !== 1 ? 's' : '' %>
+              </span>
+              <span class="text-muted" style="font-size:.78rem;">
+                <i class="bi bi-info-circle me-1"></i>Confirmation dialog shown before each decision
+              </span>
+            </div>
+          <% } %>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= startup.title %> — Admin Review</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../layouts/sidebar') %>
+
+  <main class="app-main">
+    <div class="container-fluid px-4">
+
+      <div class="page-hero">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="mb-2"><i class="bi bi-rocket-takeoff me-2"></i><%= startup.title %></h1>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+              <span class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill"
+                style="background:rgba(255,255,255,.18);color:#fff;font-size:.8rem;font-weight:600;">
+                <i class="bi bi-person-circle"></i> <%= startup.student_name %>
+                <span style="opacity:.6;">·</span>
+                <span style="opacity:.75;font-size:.72rem;"><%= startup.student_email %></span>
+              </span>
+              <span class="badge bg-white text-dark fw-semibold" style="font-size:.75rem;">
+                <i class="bi bi-tag me-1"></i><%= startup.domain %>
+              </span>
+              <span class="badge badge-<%= startup.stage %>"><%= startup.stage %></span>
+              <span class="badge badge-<%= startup.status %> d-inline-flex align-items-center gap-1">
+                <% if (startup.status === 'approved') { %><i class="bi bi-check-circle-fill" style="font-size:.6rem;"></i>
+                <% } else if (startup.status === 'rejected') { %><i class="bi bi-x-circle-fill" style="font-size:.6rem;"></i>
+                <% } else { %><i class="bi bi-clock" style="font-size:.6rem;"></i><% } %>
+                <%= startup.status %>
+              </span>
+            </div>
+          </div>
+          <a href="/admin/startups" class="btn align-self-start">
+            <i class="bi bi-arrow-left me-1"></i> Back
+          </a>
+        </div>
+      </div>
+
+      <%- include('../layouts/flash') %>
+
+      <!-- Previous remark alert -->
+      <% if (startup.admin_remark) { %>
+        <div class="alert d-flex align-items-start gap-3 border-0 rounded-3 mb-4 py-3"
+          style="background:<%= startup.status === 'approved' ? '#f0fdf4' : '#fee2e2' %>;
+                 border-left:4px solid <%= startup.status === 'approved' ? '#22c55e' : '#c0392b' %> !important;
+                 border-radius:0 10px 10px 0 !important;">
+          <i class="bi bi-chat-left-quote-fill flex-shrink-0 mt-1"
+            style="color:<%= startup.status === 'approved' ? '#1a7a4a' : '#c0392b' %>;font-size:.9rem;"></i>
+          <div style="font-size:.875rem;">
+            <strong>Previous remark:</strong> <%= startup.admin_remark %>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="row g-4 align-items-start">
+
+        <div class="col-lg-6">
+
+          <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+            <div class="card-body p-4">
+              <div class="card-section-title"><i class="bi bi-file-text me-1"></i>Startup details</div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <div class="p-3 rounded-3" style="background:#f8f9fa;border:1px solid #e3e7ef;">
+                    <div class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Domain</div>
+                    <div class="fw-semibold" style="font-size:.875rem;"><%= startup.domain %></div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-3 rounded-3" style="background:#f8f9fa;border:1px solid #e3e7ef;">
+                    <div class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Stage</div>
+                    <span class="badge badge-<%= startup.stage %>"><%= startup.stage %></span>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-3 rounded-3" style="background:#f8f9fa;border:1px solid #e3e7ef;">
+                    <div class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Submitted</div>
+                    <div class="fw-semibold" style="font-size:.845rem;">
+                      <%= new Date(startup.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="p-3 rounded-3" style="background:#f8f9fa;border:1px solid #e3e7ef;">
+                    <div class="text-muted mb-1" style="font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;">Pitch deck</div>
+                    <% if (startup.pitch_deck_url) { %>
+                      <a href="<%= startup.pitch_deck_url %>" target="_blank"
+                        class="fw-semibold text-decoration-none d-inline-flex align-items-center gap-1"
+                        style="font-size:.845rem;color:var(--ip-red);">
+                        <i class="bi bi-file-earmark-slides"></i> View
+                      </a>
+                    <% } else { %>
+                      <span class="text-muted" style="font-size:.845rem;">None</span>
+                    <% } %>
+                  </div>
+                </div>
+              </div>
+
+              <p style="font-size:.885rem;color:#374151;line-height:1.8;"><%= startup.description %></p>
+            </div>
+          </div>
+
+          <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;border-top:3px solid var(--ip-red) !important;">
+            <div class="card-body p-4">
+              <div class="card-section-title"><i class="bi bi-shield-check me-1"></i>Review decision</div>
+
+              <form action="/admin/startup/<%= startup.id %>/status" method="POST">
+                <div class="mb-3">
+                  <label class="form-label fw-semibold" style="font-size:.845rem;">
+                    Admin remark <span class="text-muted fw-normal">(optional)</span>
+                  </label>
+                  <textarea name="admin_remark" class="form-control" rows="3"
+                    placeholder="Add a note for the student — explain the decision or suggest improvements…"
+                    style="font-size:.855rem;resize:vertical;"><%= startup.admin_remark || '' %></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                  <button type="submit" name="status" value="approved"
+                    class="btn fw-semibold flex-grow-1"
+                    style="background:#1a7a4a;border-color:#1a7a4a;color:#fff;font-size:.875rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i> Approve
+                  </button>
+                  <button type="submit" name="status" value="rejected"
+                    class="btn btn-danger fw-semibold flex-grow-1" style="font-size:.875rem;">
+                    <i class="bi bi-x-circle-fill me-1"></i> Reject
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="card border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body p-4">
+              <div class="card-section-title"><i class="bi bi-person-badge me-1"></i>Assigned mentors</div>
+
+              <% if (assignedMentors.length > 0) { %>
+                <div class="d-flex flex-column gap-0 mb-3">
+                  <% assignedMentors.forEach((m, i) => { %>
+                    <div class="d-flex align-items-center gap-3 py-2 <%= i < assignedMentors.length - 1 ? 'border-bottom' : '' %>"
+                      style="border-color:#e3e7ef !important;">
+                      <div class="avatar-circle flex-shrink-0" style="width:32px;height:32px;font-size:.78rem;">
+                        <%= m.name.charAt(0).toUpperCase() %>
+                      </div>
+                      <div class="flex-grow-1 min-w-0">
+                        <div class="fw-semibold" style="font-size:.845rem;color:#111;"><%= m.name %></div>
+                        <div class="text-muted text-truncate" style="font-size:.75rem;"><%= m.email %></div>
+                      </div>
+                      <form action="/admin/startup/<%= startup.id %>/remove-mentor/<%= m.id %>" method="POST">
+                        <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:.75rem;padding:.25rem .6rem;">
+                          <i class="bi bi-person-dash me-1"></i>Remove
+                        </button>
+                      </form>
+                    </div>
+                  <% }); %>
+                </div>
+              <% } %>
+
+              <form action="/admin/startup/<%= startup.id %>/assign-mentor" method="POST">
+                <div class="input-group">
+                  <select name="mentor_id" class="form-select" required style="font-size:.845rem;">
+                    <option value="">-- Select a mentor --</option>
+                    <% mentors.forEach(m => { %>
+                      <option value="<%= m.id %>"><%= m.name %></option>
+                    <% }); %>
+                  </select>
+                  <button type="submit" class="btn btn-primary fw-semibold" style="font-size:.845rem;">
+                    <i class="bi bi-person-plus me-1"></i>Assign
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div><!-- /left -->
+
+        <div class="col-lg-6">
+
+          <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="card-section-title mb-0"><i class="bi bi-graph-up me-1"></i>Progress updates</div>
+                <span class="badge bg-primary rounded-pill" style="font-size:.68rem;"><%= progress.length %></span>
+              </div>
+
+              <% if (progress.length === 0) { %>
+                <div class="text-center py-4">
+                  <i class="bi bi-bar-chart-line" style="font-size:2rem;color:#d1d5db;display:block;margin-bottom:.5rem;"></i>
+                  <p class="text-muted mb-0" style="font-size:.845rem;">No progress updates submitted yet.</p>
+                </div>
+              <% } else { %>
+                <div class="d-flex flex-column gap-3" style="max-height:360px;overflow-y:auto;padding-right:4px;">
+                  <% progress.forEach((p, i) => { %>
+                    <div class="d-flex gap-3">
+                      <div class="d-flex flex-column align-items-center flex-shrink-0" style="width:18px;">
+                        <div class="rounded-circle" style="width:10px;height:10px;background:var(--ip-red);margin-top:4px;border:2px solid #fff;box-shadow:0 0 0 2px var(--ip-red);flex-shrink:0;"></div>
+                        <% if (i < progress.length - 1) { %>
+                          <div style="width:2px;flex:1;background:#e3e7ef;margin-top:4px;min-height:16px;"></div>
+                        <% } %>
+                      </div>
+                      <div class="pb-2 flex-grow-1">
+                        <div class="text-muted mb-1" style="font-size:.72rem;font-weight:600;">
+                          <% if (p.author_name) { %><i class="bi bi-person me-1"></i><%= p.author_name %> &nbsp;·&nbsp;<% } %>
+                          <i class="bi bi-calendar3 me-1"></i>
+                          <%= new Date(p.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %>
+                        </div>
+                        <div class="p-3 rounded-3" style="background:#f8f9fa;border:1px solid #e3e7ef;font-size:.845rem;color:#374151;line-height:1.65;">
+                          <%= p.description %>
+                        </div>
+                      </div>
+                    </div>
+                  <% }); %>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+          <!-- Funding Requests -->
+          <div class="card border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="card-section-title mb-0"><i class="bi bi-cash-coin me-1"></i>Funding requests</div>
+                <span class="badge bg-primary rounded-pill" style="font-size:.68rem;"><%= funding.length %></span>
+              </div>
+
+              <% if (funding.length === 0) { %>
+                <div class="text-center py-4">
+                  <i class="bi bi-cash-stack" style="font-size:2rem;color:#d1d5db;display:block;margin-bottom:.5rem;"></i>
+                  <p class="text-muted mb-0" style="font-size:.845rem;">No funding requests for this startup.</p>
+                </div>
+              <% } else { %>
+                <div class="d-flex flex-column gap-2 mb-3">
+                  <% funding.forEach(f => { %>
+                    <div class="p-3 rounded-3 d-flex align-items-start justify-content-between gap-2"
+                      style="background:#f8f9fa;border:1px solid #e3e7ef;">
+                      <div>
+                        <div class="fw-bold" style="font-size:.95rem;color:#111;">
+                          ₹<%= Number(f.amount_requested).toLocaleString('en-IN') %>
+                        </div>
+                        <div class="text-muted mt-1" style="font-size:.775rem;line-height:1.5;"><%= f.purpose %></div>
+                        <div class="text-muted mt-1" style="font-size:.72rem;">
+                          <i class="bi bi-calendar3 me-1"></i>
+                          <%= new Date(f.created_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %>
+                        </div>
+                      </div>
+                      <span class="badge badge-<%= f.status %> flex-shrink-0 mt-1"><%= f.status %></span>
+                    </div>
+                  <% }); %>
+                </div>
+                <a href="/admin/funding" class="btn btn-outline-secondary btn-sm fw-semibold w-100" style="font-size:.8rem;">
+                  <i class="bi bi-arrow-right me-1"></i>Manage all funding requests
+                </a>
+              <% } %>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
