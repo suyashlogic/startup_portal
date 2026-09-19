@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= title %> — NMIMS Incubation Portal</title>
+  <meta name="description" content="A launchpad for NMIMS students, founders, researchers and innovators to transform bold ideas into meaningful ventures."/>
+  <link rel="stylesheet" href="/css/variables.css"/>
+  <link rel="stylesheet" href="/css/marketing.css"/>
+</head>
+<body class="marketing-page">
+
+<%- include('_navbar') %>
+
+<!-- ── Hero ─────────────────────────────────────────────────────────── -->
+<section class="m-hero">
+  <div class="m-wrap m-hero-grid">
+    <div>
+      <div class="m-eyebrow m-hero-anim">NMIMS Incubation Ecosystem</div>
+      <h1 class="m-hero-anim">Incubate what's next.</h1>
+      <p class="m-hero-sub m-hero-anim">A launchpad for NMIMS students, founders, researchers and innovators to transform bold ideas into meaningful ventures — with mentorship, funding and a campus-wide ecosystem behind them.</p>
+      <div class="m-hero-actions m-hero-anim">
+        <a href="/apply" class="m-btn m-btn-primary">Submit your idea</a>
+        <a href="#ecosystem" class="m-btn m-btn-ghost">Explore the ecosystem</a>
+      </div>
+    </div>
+    <div class="m-hero-visual m-hero-anim">
+      <img src="/images/incubation-hero.png" alt="Students, mentors and founders collaborating across the NMIMS incubation ecosystem" loading="eager"/>
+    </div>
+  </div>
+</section>
+
+<!-- ── Impact numbers ───────────────────────────────────────────────── -->
+<section class="m-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-stats reveal">
+      <div class="m-stat">
+        <div class="m-stat-num"><span data-counter="500" data-counter-suffix="+">0</span></div>
+        <div class="m-stat-label">Student innovators</div>
+      </div>
+      <div class="m-stat">
+        <div class="m-stat-num"><span data-counter="50" data-counter-suffix="+">0</span></div>
+        <div class="m-stat-label">Mentors &amp; experts</div>
+      </div>
+      <div class="m-stat">
+        <div class="m-stat-num"><span data-counter="100" data-counter-suffix="+">0</span></div>
+        <div class="m-stat-label">Startups supported</div>
+      </div>
+      <div class="m-stat">
+        <div class="m-stat-num"><span data-counter="20" data-counter-suffix="+">0</span></div>
+        <div class="m-stat-label">Industry partners</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Ecosystem timeline (the bold, dark section) ─────────────────── -->
+<section class="m-section m-timeline-section" id="ecosystem">
+  <div class="m-wrap">
+    <div class="m-section-head reveal">
+      <h2>From idea to impact.</h2>
+      <p>Every venture that comes through the portal moves through the same nine stages — some in weeks, some over a couple of years.</p>
+    </div>
+
+    <div class="m-timeline reveal">
+      <div class="m-timeline-line"><div class="m-timeline-line-fill"></div></div>
+
+      <% const stages = [
+        ['01','Idea','A problem worth solving, written down.'],
+        ['02','Discovery','Talking to real users before building anything.'],
+        ['03','Validation','Evidence the problem — and the fix — actually holds up.'],
+        ['04','Prototype','A working first version, however rough.'],
+        ['05','Mentorship','Paired with someone who has done this before.'],
+        ['06','Incubation','Structured support, workspace and milestones.'],
+        ['07','Funding','Seed capital to extend the runway.'],
+        ['08','Market','First paying users, first real feedback loop.'],
+        ['09','Scale','Repeatable growth beyond the campus.']
+      ]; %>
+      <% stages.forEach(function(s){ %>
+        <div class="m-stage">
+          <div class="m-stage-dot"></div>
+          <div class="m-stage-num"><%= s[0] %></div>
+          <div class="m-stage-title"><%= s[1] %></div>
+          <div class="m-stage-desc"><%= s[2] %></div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- ── Featured startups ─────────────────────────────────────────────── -->
+<section class="m-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-section-head reveal">
+      <h2>Featured startups.</h2>
+      <p>A few ventures currently moving through the incubation ecosystem.</p>
+    </div>
+    <div class="m-featured-strip reveal">
+      <% featuredStartups.forEach(function(s){ %>
+        <div class="m-featured-card">
+          <span class="m-featured-badge"><%= s.tag %></span>
+          <h3><%= s.name %></h3>
+          <div class="m-role"><%= s.role %></div>
+          <p><%= s.desc %></p>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- ── Explore facility ─────────────────────────────────────────────── -->
+<section class="m-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-section-head reveal">
+      <h2>Explore the facility.</h2>
+      <p>Physical space matters — here's what's on campus for founders to use.</p>
+    </div>
+    <div class="m-facility-grid reveal">
+      <% facilities.forEach(function(f){ %>
+        <div class="m-facility-card">
+          <div class="m-facility-photo" aria-hidden="true"><%= f.icon %></div>
+          <div class="m-facility-body">
+            <h3><%= f.title %></h3>
+            <p><%= f.desc %></p>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<!-- ── Testimonials (carousel) ──────────────────────────────────────── -->
+<section class="m-section m-testimonials-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-section-head reveal">
+      <h2>Testimonials</h2>
+      <p>Early feedback from students who've been through the process.</p>
+    </div>
+
+    <div class="m-carousel reveal" data-carousel>
+      <button class="m-carousel-arrow m-carousel-prev" type="button" aria-label="Previous testimonial">&#8249;</button>
+
+      <div class="m-carousel-viewport">
+        <div class="m-carousel-track" data-carousel-track>
+          <% testimonials.forEach(function(t){ %>
+            <div class="m-carousel-slide">
+              <div class="m-testimonial">
+                <div class="m-testimonial-top">
+                  <span class="m-testimonial-quote-mark">&#8220;</span>
+                </div>
+                <p class="m-testimonial-quote"><%= t.quote %></p>
+                <div class="m-testimonial-foot">
+                  <div class="m-testimonial-avatar"><%= t.initials %></div>
+                  <div>
+                    <div class="m-testimonial-name"><%= t.name %></div>
+                    <div class="m-testimonial-role"><%= t.role %></div>
+                  </div>
+                  <div class="m-testimonial-company"><%= t.company %></div>
+                </div>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+      <button class="m-carousel-arrow m-carousel-next" type="button" aria-label="Next testimonial">&#8250;</button>
+    </div>
+
+    <div class="m-carousel-dots" data-carousel-dots></div>
+  </div>
+</section>
+
+<!-- ── Who is it for ────────────────────────────────────────────────── -->
+<section class="m-section">
+  <div class="m-wrap">
+    <div class="m-section-head reveal">
+      <h2>Built for four kinds of people.</h2>
+      <p>The portal serves everyone who plays a part in turning an idea into a venture.</p>
+    </div>
+
+    <div class="m-audience-grid reveal">
+      <div class="m-audience-card">
+        <div class="m-audience-icon">🎓</div>
+        <h3>Students</h3>
+        <p>Turn your ideas into opportunities — submit, get feedback, find a mentor.</p>
+        <a href="/students" class="m-card-link">Start here →</a>
+      </div>
+      <div class="m-audience-card">
+        <div class="m-audience-icon">🚀</div>
+        <h3>Founders</h3>
+        <p>Build, validate and scale your venture with structured incubation support.</p>
+        <a href="/founders" class="m-card-link">See the directory →</a>
+      </div>
+      <div class="m-audience-card">
+        <div class="m-audience-icon">🧭</div>
+        <h3>Mentors</h3>
+        <p>Guide the next generation of founders through the decisions that matter.</p>
+        <a href="/mentors" class="m-card-link">Meet the network →</a>
+      </div>
+      <div class="m-audience-card">
+        <div class="m-audience-icon">📚</div>
+        <h3>Faculty</h3>
+        <p>Connect research, knowledge and entrepreneurship across departments.</p>
+        <a href="/faculty" class="m-card-link">Learn more →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA band ─────────────────────────────────────────────────────── -->
+<section class="m-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-cta-band reveal">
+      <div>
+        <h2>Have an idea? Let's build it.</h2>
+        <p>Submission takes about ten minutes. Review usually happens within a week.</p>
+      </div>
+      <a href="/apply" class="m-btn m-btn-primary">Submit your idea</a>
+    </div>
+  </div>
+</section>
+
+<%- include('_footer') %>
+
+<script src="/js/marketing.js"></script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= title %> — NMIMS Incubation Portal</title>
+  <link rel="stylesheet" href="/css/variables.css"/>
+  <link rel="stylesheet" href="/css/marketing.css"/>
+</head>
+<body class="marketing-page">
+
+<%- include('_navbar') %>
+
+<section class="m-journey-hero">
+  <div class="m-wrap">
+    <div class="m-eyebrow reveal"><%= eyebrow %></div>
+    <h1 class="reveal"><%= heading %></h1>
+    <p class="reveal"><%= sub %></p>
+  </div>
+</section>
+
+<section class="m-section">
+  <div class="m-wrap">
+    <div class="m-list reveal">
+      <% items.forEach(function(item){ %>
+        <div class="m-list-item">
+          <div class="m-list-date"><%= item.date %></div>
+          <div>
+            <div class="m-list-title"><%= item.title %></div>
+            <div class="m-list-meta"><%= item.meta %></div>
+          </div>
+          <% if (item.href) { %>
+            <a href="<%= item.href %>" class="m-btn m-btn-ghost" style="padding:.5rem 1.1rem;font-size:.82rem;">View</a>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+
+    <% if (!items.length) { %>
+      <p style="color:var(--muted);text-align:center;padding:3rem 0;">Nothing listed here yet — check back soon.</p>
+    <% } %>
+  </div>
+</section>
+
+<%- include('_footer') %>
+<script src="/js/marketing.js"></script>
+</body>
+</html>

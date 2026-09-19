@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Apply — NMIMS Incubation Portal</title>
+  <link rel="stylesheet" href="/css/variables.css"/>
+  <link rel="stylesheet" href="/css/marketing.css"/>
+</head>
+<body class="marketing-page">
+
+<%- include('_navbar') %>
+
+<section class="m-journey-hero">
+  <div class="m-wrap">
+    <div class="m-eyebrow reveal">Apply</div>
+    <h1 class="reveal">Have an idea? Let's build it.</h1>
+    <p class="reveal">Submission is quick, but it's worth doing properly — the details you give here are what a mentor reads first.</p>
+  </div>
+</section>
+
+<section class="m-section">
+  <div class="m-wrap">
+    <div class="m-steps reveal" style="margin-bottom:3rem;">
+      <div class="m-step">
+        <div class="m-step-index">01</div>
+        <div><div class="m-step-title">Your idea</div><div class="m-step-desc">Title, description, domain and current stage.</div></div>
+      </div>
+      <div class="m-step">
+        <div class="m-step-index">02</div>
+        <div><div class="m-step-title">Supporting material</div><div class="m-step-desc">A pitch deck helps, but isn't required to submit.</div></div>
+      </div>
+      <div class="m-step">
+        <div class="m-step-index">03</div>
+        <div><div class="m-step-title">Review</div><div class="m-step-desc">The admin team reviews submissions and responds with a decision and remarks.</div></div>
+      </div>
+      <div class="m-step">
+        <div class="m-step-index">04</div>
+        <div><div class="m-step-title">Mentor &amp; track progress</div><div class="m-step-desc">Once approved, a mentor is assigned and you can post updates and request funding.</div></div>
+      </div>
+    </div>
+
+    <div class="m-cta-band reveal">
+      <% if (typeof user !== 'undefined' && user && user.role === 'student') { %>
+        <div>
+          <h2>Ready when you are.</h2>
+          <p>You're signed in as <%= user.name %> — go ahead and submit.</p>
+        </div>
+        <a href="/student/startup/new" class="m-btn m-btn-primary">Submit your idea</a>
+      <% } else if (typeof user !== 'undefined' && user) { %>
+        <div>
+          <h2>This flow is for students.</h2>
+          <p>You're signed in as a <%= user.role %>. Idea submission is only available on student accounts.</p>
+        </div>
+        <a href="/<%= user.role %>/dashboard" class="m-btn m-btn-ghost">Back to dashboard</a>
+      <% } else { %>
+        <div>
+          <h2>Create a student account first.</h2>
+          <p>Submissions are tied to your account so you can track review status and mentor feedback.</p>
+        </div>
+        <a href="/auth/register" class="m-btn m-btn-primary">Sign up as a student</a>
+      <% } %>
+    </div>
+  </div>
+</section>
+
+<%- include('_footer') %>
+<script src="/js/marketing.js"></script>
+</body>
+</html>

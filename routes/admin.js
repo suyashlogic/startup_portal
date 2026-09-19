@@ -4,12 +4,6 @@ import { requireAdmin } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// ── GET /admin/dashboard ─────────────────────────────────────────
-// dashboard.ejs expects:
-//   stats.startups.{ total, pending, approved, rejected }
-//   stats.users.{ students, mentors }
-//   stats.funding.{ total_approved, pending }
-//   recentStartups[]  (last 5, with student_name)
 router.get('/dashboard', requireAdmin, async (req, res) => {
   try {
     const [startupsResult, usersResult, fundingResult, recentResult] = await Promise.all([

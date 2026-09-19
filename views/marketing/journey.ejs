@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= title %> — NMIMS Incubation Portal</title>
+  <link rel="stylesheet" href="/css/variables.css"/>
+  <link rel="stylesheet" href="/css/marketing.css"/>
+</head>
+<body class="marketing-page">
+
+<%- include('_navbar') %>
+
+<section class="m-journey-hero">
+  <div class="m-wrap">
+    <div class="m-eyebrow reveal"><%= eyebrow %></div>
+    <h1 class="reveal"><%= heading %></h1>
+    <p class="reveal"><%= sub %></p>
+  </div>
+</section>
+
+<section class="m-section">
+  <div class="m-wrap">
+    <div class="m-steps reveal">
+      <% steps.forEach(function(step, i){ %>
+        <div class="m-step">
+          <div class="m-step-index"><%= String(i + 1).padStart(2, '0') %></div>
+          <div>
+            <div class="m-step-title"><%= step.title %></div>
+            <div class="m-step-desc"><%= step.desc %></div>
+          </div>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</section>
+
+<% if (typeof cta !== 'undefined' && cta) { %>
+<section class="m-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-cta-band reveal">
+      <div>
+        <h2><%= cta.heading %></h2>
+        <p><%= cta.sub %></p>
+      </div>
+      <a href="<%= cta.href %>" class="m-btn m-btn-primary"><%= cta.label %></a>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<%- include('_footer') %>
+<script src="/js/marketing.js"></script>
+</body>
+</html>

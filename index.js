@@ -7,10 +7,11 @@ import 'dotenv/config';
 
 import { setLocals } from './middleware/authMiddleware.js';
 import passport from 'passport';
-import authRoutes    from './routes/auth.js';
-import studentRoutes from './routes/student.js';
-import adminRoutes   from './routes/admin.js';
-import mentorRoutes  from './routes/mentor.js';
+import authRoutes      from './routes/auth.js';
+import studentRoutes   from './routes/student.js';
+import adminRoutes     from './routes/admin.js';
+import mentorRoutes    from './routes/mentor.js';
+import marketingRoutes from './routes/marketing.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -42,18 +43,15 @@ app.use(passport.session());
 
 app.use(setLocals);
 
+app.use('/',        marketingRoutes);
 app.use('/auth',    authRoutes);
 app.use('/student', studentRoutes);
 app.use('/admin',   adminRoutes);
 app.use('/mentor',  mentorRoutes);
 
-app.get('/', (req, res) => {
-  if (!req.isAuthenticated()) return res.redirect('/auth/login');
-  const role = req.user.role;
-  if (role === 'admin')  return res.redirect('/admin/dashboard');
-  if (role === 'mentor') return res.redirect('/mentor/dashboard');
-  return res.redirect('/student/dashboard');
-});
+// Old app.get('/', ...) redirect removed — marketingRoutes' GET '/' handler
+// does the same "logged-in users get sent to their dashboard" check, and
+// shows the public marketing home page to everyone else instead.
 
 app.use((req, res) => {
   res.status(404).render('error', {

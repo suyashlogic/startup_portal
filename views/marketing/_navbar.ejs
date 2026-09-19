@@ -1,0 +1,49 @@
+<nav class="m-nav">
+  <div class="m-nav-inner">
+    <a href="/" class="m-logo">
+      <span class="m-logo-mark" aria-hidden="true"></span>
+      NMIMS <span style="font-weight:400;opacity:.7;">Incubation</span>
+    </a>
+
+    <div class="m-nav-links">
+      <a href="/students">Students</a>
+      <a href="/founders">Founders</a>
+      <a href="/mentors">Mentors</a>
+      <a href="/faculty">Faculty</a>
+      <a href="/programs">Programs</a>
+      <a href="/events">Events</a>
+      <a href="/resources">Resources</a>
+    </div>
+
+    <div class="m-nav-actions">
+      <% if (typeof user !== 'undefined' && user) { %>
+        <a href="/<%= user.role %>/dashboard" class="m-login">Dashboard</a>
+        <a href="/apply" class="m-btn m-btn-primary">Submit idea</a>
+      <% } else { %>
+        <a href="/auth/login" class="m-login">Log in</a>
+        <a href="/auth/register" class="m-btn m-btn-primary">Sign up</a>
+      <% } %>
+    </div>
+
+    <button class="m-nav-burger" aria-label="Open menu" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
+</nav>
+
+<div class="m-mobile-menu">
+  <a href="/students">Students</a>
+  <a href="/founders">Founders</a>
+  <a href="/mentors">Mentors</a>
+  <a href="/faculty">Faculty</a>
+  <a href="/programs">Programs</a>
+  <a href="/events">Events</a>
+  <a href="/resources">Resources</a>
+  <hr style="border-color:rgba(102,44,17,.12);width:100%;"/>
+  <% if (typeof user !== 'undefined' && user) { %>
+    <a href="/<%= user.role %>/dashboard">Dashboard</a>
+  <% } else { %>
+    <a href="/auth/login">Log in</a>
+    <a href="/auth/register">Sign up</a>
+  <% } %>
+</div>

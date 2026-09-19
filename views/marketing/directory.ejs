@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= title %> — NMIMS Incubation Portal</title>
+  <link rel="stylesheet" href="/css/variables.css"/>
+  <link rel="stylesheet" href="/css/marketing.css"/>
+</head>
+<body class="marketing-page">
+
+<%- include('_navbar') %>
+
+<section class="m-directory-hero">
+  <div class="m-wrap">
+    <div class="m-eyebrow reveal"><%= eyebrow %></div>
+    <h1 class="reveal" style="font-size:clamp(2rem,3.6vw,2.8rem);margin-bottom:.6rem;"><%= heading %></h1>
+    <p class="reveal" style="max-width:56ch;color:var(--ink);opacity:.8;font-size:1.05rem;margin-bottom:2rem;"><%= sub %></p>
+
+    <% if (typeof filters !== 'undefined' && filters.length) { %>
+      <div class="m-filters reveal" data-filter-group="#directoryGrid">
+        <button class="m-filter-chip is-active" data-filter-value="all">All</button>
+        <% filters.forEach(function(f){ %>
+          <button class="m-filter-chip" data-filter-value="<%= f.value %>"><%= f.label %></button>
+        <% }); %>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<section class="m-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-directory-grid reveal" id="directoryGrid">
+      <% items.forEach(function(item){ %>
+        <div class="m-directory-card" data-category="<%= item.category || '' %>" data-accent="<%= item.accent || '' %>">
+          <div class="m-directory-card-tag"><%= item.tag %></div>
+          <h3><%= item.name %></h3>
+          <div class="m-role"><%= item.role %></div>
+          <p><%= item.desc %></p>
+          <% if (item.tags && item.tags.length) { %>
+            <div class="m-tags">
+              <% item.tags.forEach(function(t){ %><span class="m-tag-pill"><%= t %></span><% }); %>
+            </div>
+          <% } %>
+        </div>
+      <% }); %>
+    </div>
+
+    <% if (!items.length) { %>
+      <p style="color:var(--muted);text-align:center;padding:3rem 0;">Nothing listed here yet — check back soon.</p>
+    <% } %>
+  </div>
+</section>
+
+<% if (typeof cta !== 'undefined' && cta) { %>
+<section class="m-section" style="padding-top:0;">
+  <div class="m-wrap">
+    <div class="m-cta-band reveal">
+      <div>
+        <h2><%= cta.heading %></h2>
+        <p><%= cta.sub %></p>
+      </div>
+      <a href="<%= cta.href %>" class="m-btn m-btn-primary"><%= cta.label %></a>
+    </div>
+  </div>
+</section>
+<% } %>
+
+<%- include('_footer') %>
+<script src="/js/marketing.js"></script>
+</body>
+</html>

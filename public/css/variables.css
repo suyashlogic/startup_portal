@@ -1,0 +1,41 @@
+/* ==========================================================================
+   NMIMS Incubation Portal — Marketing site design tokens
+   Scoped so these never leak into the existing dashboard app (see marketing.css)
+   ========================================================================== */
+
+:root {
+  /* Brand palette (from the brief) */
+  --text:       #662C11;   /* headings, large type, structural lines */
+  --ink:        #2B140A;   /* body copy — slightly darker for contrast on cream */
+  --background: #EFEFEB;   /* dominant canvas */
+  --primary:    #CE4048;   /* actions, active states */
+  --secondary:  #1EE5EB;   /* technology / connection / data accent */
+  --accent:     #F1AB27;   /* achievement / growth / milestones */
+
+  --white:  #FFFFFF;
+  --muted:  #8A7A70;
+  --border: rgba(102, 44, 17, 0.12);
+  --border-strong: rgba(102, 44, 17, 0.22);
+
+  /* Dark section (used once, deliberately — the ecosystem timeline) */
+  --ink-bg:      #241008;
+  --ink-bg-soft: #341709;
+  --on-ink:      #F4EEE8;
+  --on-ink-muted: rgba(244, 238, 232, 0.62);
+
+  /* Type */
+  --font-display: 'Times New Roman', Times, serif;
+  --font-body: 'Times New Roman', Times, serif;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(43, 20, 10, 0.06);
+  --shadow-md: 0 8px 24px rgba(43, 20, 10, 0.08);
+  --shadow-lg: 0 20px 48px rgba(43, 20, 10, 0.14);
+
+  /* Layout */
+  --max-w: 1240px;
+  --nav-h: 76px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+}

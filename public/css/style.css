@@ -1,21 +1,29 @@
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+/* Times New Roman is a system font — no @import needed */
 
 :root {
-  --ip-red:       #8b1a1a;
-  --ip-red-dark:  #6b1313;
-  --ip-red-light: #b52020;
-  --ip-red-pale:  #fdf2f2;
-  --ip-red-rgb:   139, 26, 26;
+  /* Brand palette — now matches the marketing site */
+  --ip-red:       #CE4048;   /* was #8b1a1a — now brand coral (--primary) */
+  --ip-red-dark:  #A8323A;   /* darker coral, used for hover/topbar */
+  --ip-red-light: #DE6169;   /* lighter coral, used for gradients */
+  --ip-red-pale:  #FBEAEA;   /* pale coral tint, used for hover backgrounds */
+  --ip-red-rgb:   206, 64, 72;
+
+  /* Extra brand tokens, shared with the marketing site */
+  --ip-text:      #662C11;
+  --ip-ink:       #2B140A;
+  --ip-secondary: #1EE5EB;
+  --ip-accent:    #F1AB27;
+
   --sidebar-w:    260px;
   --topbar-h:     56px;
-  --bs-font-sans-serif: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --bs-primary:         #8b1a1a;
-  --bs-primary-rgb:     139, 26, 26;
-  --bs-link-color:      #8b1a1a;
-  --bs-link-hover-color:#6b1313;
+  --bs-font-sans-serif: 'Times New Roman', Times, serif;
+  --bs-primary:         #CE4048;
+  --bs-primary-rgb:     206, 64, 72;
+  --bs-link-color:      #CE4048;
+  --bs-link-hover-color:#A8323A;
 }
 
-body { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; background: #f3f5f9; }
+body { font-family: 'Times New Roman', Times, serif; background: #EFEFEB; }
 
 /* Bootstrap primary overrides */
 .btn-primary  { background-color: var(--ip-red) !important; border-color: var(--ip-red) !important; }
@@ -41,7 +49,7 @@ a { color: var(--ip-red); } a:hover { color: var(--ip-red-dark); }
   position: fixed; top:0; left:0; right:0; z-index:1030;
   display:flex; align-items:center; padding:0 1.25rem; gap:1rem;
 }
-.app-topbar .brand { font-size:1.05rem; font-weight:800; color:#fff; letter-spacing:.03em; white-space:nowrap; }
+.app-topbar .brand { font-size:1.05rem; font-weight:700; color:#fff; letter-spacing:.02em; white-space:nowrap; }
 .app-topbar .top-right { margin-left:auto; display:flex; align-items:center; gap:.75rem; }
 .top-user-badge { background:rgba(255,255,255,.15); color:#fff; font-size:.78rem; padding:.3rem .75rem; border-radius:20px; border:1px solid rgba(255,255,255,.25); white-space:nowrap; }
 
@@ -56,11 +64,11 @@ a { color: var(--ip-red); } a:hover { color: var(--ip-red-dark); }
 .sidebar-section { font-size:.62rem; font-weight:700; text-transform:uppercase; letter-spacing:.1em; color:#9ca3af; padding:.9rem 1.2rem .25rem; }
 .sidebar-link {
   display:flex; align-items:center; gap:.65rem;
-  padding:.58rem 1.2rem; color:#4b5563; font-size:.845rem; font-weight:500;
+  padding:.58rem 1.2rem; color:#4b5563; font-size:.9rem; font-weight:500;
   text-decoration:none; border-left:3px solid transparent; transition:all .13s;
 }
 .sidebar-link:hover  { background:var(--ip-red-pale); color:var(--ip-red); border-left-color:var(--ip-red); }
-.sidebar-link.active { background:var(--ip-red-pale); color:var(--ip-red); border-left-color:var(--ip-red); font-weight:600; }
+.sidebar-link.active { background:var(--ip-red-pale); color:var(--ip-red); border-left-color:var(--ip-red); font-weight:700; }
 .s-icon { width:18px; text-align:center; font-size:.9rem; flex-shrink:0; }
 .sidebar-footer { margin-top:auto; padding:.9rem 1.2rem; border-top:1px solid #e3e7ef; background:#fafafa; }
 .avatar-circle { width:36px; height:36px; border-radius:50%; background:var(--ip-red); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:.85rem; flex-shrink:0; }
@@ -70,8 +78,8 @@ a { color: var(--ip-red); } a:hover { color: var(--ip-red-dark); }
 
 /* Page hero */
 .page-hero { background:linear-gradient(120deg, var(--ip-red) 0%, var(--ip-red-light) 100%); border-radius:14px; padding:1.35rem 1.6rem; color:#fff; margin-bottom:1.5rem; }
-.page-hero h1 { font-size:1.28rem; font-weight:800; margin:0; letter-spacing:.02em; }
-.page-hero p  { margin:.2rem 0 0; color:rgba(255,255,255,.8); font-size:.845rem; }
+.page-hero h1 { font-size:1.32rem; font-weight:700; margin:0; letter-spacing:.01em; }
+.page-hero p  { margin:.2rem 0 0; color:rgba(255,255,255,.85); font-size:.87rem; }
 .page-hero .btn        { background:rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.35); color:#fff; font-weight:600; }
 .page-hero .btn:hover  { background:rgba(255,255,255,.28); color:#fff; }
 .page-hero .btn-white  { background:#fff; color:var(--ip-red); border:none; font-weight:700; }
@@ -80,24 +88,24 @@ a { color: var(--ip-red); } a:hover { color: var(--ip-red-dark); }
 /* Stat cards */
 .stat-card { background:#fff; border-radius:12px; border:1px solid #e3e7ef; border-top:3px solid var(--ip-red); padding:1.15rem 1.25rem; transition:transform .2s,box-shadow .2s; }
 .stat-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(var(--ip-red-rgb),.1); }
-.stat-val { font-size:1.85rem; font-weight:800; color:var(--ip-red); line-height:1; }
+.stat-val { font-size:1.9rem; font-weight:700; color:var(--ip-red); line-height:1; }
 .stat-lbl { font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#9ca3af; margin-top:.25rem; }
 
 /* Auth */
 .auth-page { min-height:100vh; display:flex; }
 .auth-left {
-  flex:1; background:linear-gradient(145deg,#3d0909 0%,var(--ip-red) 50%,#c0392b 100%);
+  flex:1; background:linear-gradient(145deg,#3a140a 0%,var(--ip-red) 50%,#DE6169 100%);
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   padding:3rem; position:relative; overflow:hidden;
 }
 .auth-left::before { content:''; position:absolute; width:480px; height:480px; border-radius:50%; background:rgba(255,255,255,.04); top:-140px; right:-140px; }
 .auth-left::after  { content:''; position:absolute; width:280px; height:280px; border-radius:50%; background:rgba(255,255,255,.04); bottom:-70px; left:-70px; }
 .al-content { position:relative; z-index:1; text-align:center; max-width:320px; }
-.al-logo { font-size:3.2rem; font-weight:900; color:#fff; letter-spacing:.03em; }
+.al-logo { font-size:3rem; font-weight:700; color:#fff; letter-spacing:.02em; }
 .al-tag  { color:rgba(255,255,255,.7); font-size:.9rem; margin-top:.4rem; }
 
 .auth-right { width:480px; background:#fff; display:flex; flex-direction:column; justify-content:center; padding:3rem 2.5rem; overflow-y:auto; }
-.ar-title { font-size:1.55rem; font-weight:800; color:#111; margin-bottom:.25rem; }
+.ar-title { font-size:1.55rem; font-weight:700; color:#111; margin-bottom:.25rem; }
 .ar-sub   { color:#6b7280; font-size:.875rem; margin-bottom:1.6rem; }
 
 /* Google buttons */
@@ -121,20 +129,24 @@ a { color: var(--ip-red); } a:hover { color: var(--ip-red-dark); }
 
 /* Misc */
 .f-err { color:#991b1b; font-size:.75rem; margin-top:.25rem; display:flex; align-items:center; gap:.3rem; }
-.form-control.ng-invalid.ng-touched { border-color:#c0392b !important; }
+.form-control.ng-invalid.ng-touched { border-color:#A8323A !important; }
 .form-control.ng-valid.ng-touched   { border-color:#1a7a4a !important; }
 .pw-wrap { position:relative; }
 .pw-eye  { position:absolute; right:.75rem; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; color:#9ca3af; font-size:.95rem; padding:0; z-index:5; }
 .upload-zone { border:2px dashed #d1d5db; border-radius:10px; padding:1.5rem; text-align:center; background:#fafafa; transition:border-color .2s,background .2s; cursor:pointer; }
 .upload-zone:hover { border-color:var(--ip-red); background:var(--ip-red-pale); }
 
-/* Badge colour overrides */
-.badge-pending   { background:#fef3c7 !important; color:#92400e !important; }
+/* Status badges — kept semantic (amber/green/red) so at-a-glance meaning
+   still reads correctly; only their tints are nudged toward the new accent */
+.badge-pending   { background:#FCEFD6 !important; color:#8A5A0B !important; }
 .badge-approved  { background:#d1fae5 !important; color:#065f46 !important; }
 .badge-rejected  { background:#fee2e2 !important; color:#991b1b !important; }
-.badge-student   { background:#dbeafe !important; color:#1e40af !important; }
-.badge-mentor    { background:#ede9fe !important; color:#5b21b6 !important; }
-.badge-admin     { background:#fce7f3 !important; color:#9d174d !important; }
+
+/* Role badges — now mapped to the brand's three accent colors */
+.badge-student   { background:rgba(30,229,235,.14) !important; color:#0E7478 !important; } /* secondary (cyan) */
+.badge-mentor    { background:rgba(241,171,39,.18) !important; color:#8A5A0B !important; } /* accent (amber) */
+.badge-admin     { background:rgba(206,64,72,.12) !important; color:var(--ip-red) !important; } /* primary (coral) */
+
 .badge-idea      { background:#f1f5f9 !important; color:#475569 !important; }
 .badge-prototype { background:#eff6ff !important; color:#1d4ed8 !important; }
 .badge-mvp       { background:#f0fdf4 !important; color:#15803d !important; }
