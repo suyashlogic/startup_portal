@@ -13,6 +13,10 @@
     <a href="/student/startups" class="sidebar-link">
       <i class="bi bi-rocket s-icon"></i> My Startups
     </a>
+    <a href="/notifications" class="sidebar-link">
+      <i class="bi bi-bell s-icon"></i> Notifications
+      <% if (typeof unreadCount !== 'undefined' && unreadCount > 0) { %><span class="badge rounded-pill ms-auto" style="background:#CE4048;color:#fff;font-size:.65rem;"><%= unreadCount %></span><% } %>
+    </a>
 
   <% } else if (user.role === 'admin') { %>
     <a href="/admin/dashboard" class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/admin/dashboard' ? 'active' : '' %>">
@@ -28,6 +32,14 @@
     <a href="/admin/users" class="sidebar-link">
       <i class="bi bi-people s-icon"></i> Users
     </a>
+    <a href="/admin/email-logs" class="sidebar-link">
+      <i class="bi bi-envelope-check s-icon"></i> Email Activity
+    </a>
+    <div class="sidebar-section mt-2">Account</div>
+    <a href="/notifications" class="sidebar-link">
+      <i class="bi bi-bell s-icon"></i> Notifications
+      <% if (typeof unreadCount !== 'undefined' && unreadCount > 0) { %><span class="badge rounded-pill ms-auto" style="background:#CE4048;color:#fff;font-size:.65rem;"><%= unreadCount %></span><% } %>
+    </a>
 
   <% } else if (user.role === 'mentor') { %>
     <a href="/mentor/dashboard" class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/mentor/dashboard' ? 'active' : '' %>">
@@ -35,6 +47,10 @@
     </a>
     <a href="/mentor/feedback" class="sidebar-link">
       <i class="bi bi-chat-square-text s-icon"></i> Feedback
+    </a>
+    <a href="/notifications" class="sidebar-link">
+      <i class="bi bi-bell s-icon"></i> Notifications
+      <% if (typeof unreadCount !== 'undefined' && unreadCount > 0) { %><span class="badge rounded-pill ms-auto" style="background:#CE4048;color:#fff;font-size:.65rem;"><%= unreadCount %></span><% } %>
     </a>
   <% } %>
 </nav>

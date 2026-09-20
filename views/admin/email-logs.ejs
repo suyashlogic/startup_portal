@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Email Activity — IncuPortal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../layouts/sidebar') %>
+  <main class="app-main">
+    <div class="container-fluid px-4">
+      <div class="page-hero d-flex align-items-center justify-content-between flex-wrap gap-3">
+        <div>
+          <h1><i class="bi bi-envelope-check me-2"></i>Email Activity</h1>
+          <p>Delivery log for every automated email. Message contents are never stored.</p>
+        </div>
+        <span class="badge bg-white text-primary fw-semibold px-3 py-2" style="font-size:.8rem;border-radius:20px;"><%= total %> result<%= total !== 1 ? 's' : '' %></span>
+      </div>
+
+      <%- include('../layouts/flash') %>
+
+      <div class="row g-3 mb-4">
+        <% [['Sent','sent','#1a7a4a','#f0fdf4','bi-check-circle'],['Failed','failed','#c0392b','#fee2e2','bi-x-circle'],['Queued','queued','#d97706','#fef9ec','bi-hourglass-split']].forEach(function(c){ %>
+          <div class="col-4">
+            <a href="/admin/email-logs?status=<%= c[1] %>" class="text-decoration-none">
+              <div class="stat-card" style="border-top-color:<%= c[2] %>;">
+                <div class="d-flex align-items-center gap-3">
+                  <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:<%= c[3] %>;"><i class="bi <%= c[4] %>" style="color:<%= c[2] %>;"></i></div>
+                  <div><div class="stat-val" style="color:<%= c[2] %>;"><%= counter[c[1]] %></div><div class="stat-lbl"><%= c[0] %> (all time)</div></div>
+                </div>
+              </div>
+            </a>
+          </div>
+        <% }); %>
+      </div>
+
+      <div class="card border-0 shadow-sm mb-4" style="border-radius:12px;">
+        <div class="card-body py-3 px-4">
+          <form action="/admin/email-logs" method="GET">
+            <div class="row g-3 align-items-end">
+              <div class="col-12 col-md-3">
+                <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">Recipient</label>
+                <input type="text" name="q" class="form-control" value="<%= filters.q %>" placeholder="name@college.edu" style="font-size:.845rem;"/>
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">Status</label>
+                <select name="status" class="form-select" style="font-size:.845rem;">
+                  <option value="">All</option>
+                  <% ['sent','failed','queued'].forEach(function(s){ %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= s %></option><% }); %>
+                </select>
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">Email type</label>
+                <select name="template" class="form-select" style="font-size:.845rem;">
+                  <option value="">All types</option>
+                  <% templates.forEach(function(t){ %><option value="<%= t %>" <%= filters.template === t ? 'selected' : '' %>><%= t %></option><% }); %>
+                </select>
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">From</label>
+                <input type="date" name="from" class="form-control" value="<%= filters.from %>" style="font-size:.845rem;"/>
+              </div>
+              <div class="col-6 col-md-2">
+                <label class="form-label fw-semibold mb-1" style="font-size:.8rem;">To</label>
+                <input type="date" name="to" class="form-control" value="<%= filters.to %>" style="font-size:.845rem;"/>
+              </div>
+              <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-primary fw-semibold" style="font-size:.855rem;"><i class="bi bi-funnel me-1"></i>Apply filters</button>
+                <a href="/admin/email-logs" class="btn btn-outline-secondary" style="font-size:.855rem;">Reset</a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="card border-0 shadow-sm" style="border-radius:14px;">
+        <div class="card-body p-0">
+          <% if (logs.length === 0) { %>
+            <div class="text-center py-5 text-muted" style="font-size:.9rem;">No emails match these filters.</div>
+          <% } else { %>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead><tr>
+                  <th class="ps-4">Recipient</th><th>Subject</th><th>Type</th><th>Status</th><th>Related startup</th><th>Date</th>
+                </tr></thead>
+                <tbody>
+                  <% logs.forEach(function(l){ %>
+                    <tr>
+                      <td class="ps-4" style="font-size:.83rem;"><%= l.recipient %></td>
+                      <td style="font-size:.83rem;max-width:280px;"><div class="text-truncate"><%= l.subject %></div></td>
+                      <td><span class="badge" style="background:#f1f5f9;color:#475569;font-size:.68rem;"><%= l.template %></span></td>
+                      <td>
+                        <span class="badge <%= l.status === 'sent' ? 'badge-approved' : l.status === 'failed' ? 'badge-rejected' : 'badge-pending' %>"><%= l.status %></span>
+                        <% if (l.error_message) { %><div class="text-danger mt-1" style="font-size:.7rem;max-width:240px;"><i class="bi bi-exclamation-triangle-fill me-1"></i><%= l.error_message %></div><% } %>
+                      </td>
+                      <td style="font-size:.82rem;">
+                        <% if (l.startup_id) { %><a href="/admin/startup/<%= l.startup_id %>" class="text-decoration-none"><%= l.startup_title %></a><% } else { %><span class="text-muted">—</span><% } %>
+                      </td>
+                      <td class="text-muted" style="font-size:.78rem;white-space:nowrap;"><%= new Date(l.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) %></td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+            <% if (pages > 1) {
+                 const qs = new URLSearchParams(Object.entries(filters).filter(function(e){ return e[1]; })); %>
+              <div class="px-4 py-2 d-flex align-items-center justify-content-between" style="border-top:1px solid #e3e7ef;background:#fafbfc;border-radius:0 0 14px 14px;">
+                <span class="text-muted" style="font-size:.78rem;">Page <strong><%= page %></strong> of <%= pages %></span>
+                <div class="d-flex gap-2">
+                  <a class="btn btn-outline-secondary btn-sm <%= page <= 1 ? 'disabled' : '' %>" href="/admin/email-logs?<%= qs.toString() %>&page=<%= page - 1 %>">Previous</a>
+                  <a class="btn btn-outline-secondary btn-sm <%= page >= pages ? 'disabled' : '' %>" href="/admin/email-logs?<%= qs.toString() %>&page=<%= page + 1 %>">Next</a>
+                </div>
+              </div>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

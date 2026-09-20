@@ -5,6 +5,26 @@
   <span class="brand"><i class="bi bi-mortarboard-fill me-2"></i>IncuPortal</span>
 
   <div class="top-right">
+    <!-- Notification bell -->
+    <div class="dropdown" id="notifDropdown">
+      <button type="button" class="btn btn-sm position-relative" data-bs-toggle="dropdown" data-bs-auto-close="outside"
+        aria-label="Notifications" style="color:#fff;border:1px solid rgba(255,255,255,.25);padding:.3rem .6rem;">
+        <i class="bi bi-bell"></i>
+        <span data-notif-badge class="position-absolute top-0 start-100 translate-middle badge rounded-pill <%= (typeof unreadCount !== 'undefined' && unreadCount > 0) ? '' : 'd-none' %>"
+          style="background:#F1AB27;color:#2B140A;font-size:.62rem;"><%= (typeof unreadCount !== 'undefined') ? unreadCount : 0 %></span>
+      </button>
+      <div class="dropdown-menu dropdown-menu-end p-0 shadow" style="width:340px;max-width:92vw;border-radius:12px;overflow:hidden;">
+        <div class="d-flex align-items-center justify-content-between px-3 py-2" style="border-bottom:1px solid #e3e7ef;background:#fafbfc;">
+          <span class="fw-bold" style="font-size:.85rem;">Notifications</span>
+          <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" data-notif-readall style="font-size:.75rem;">Mark all read</button>
+        </div>
+        <div data-notif-list style="max-height:340px;overflow-y:auto;">
+          <div class="text-center text-muted py-4" style="font-size:.82rem;">Loading…</div>
+        </div>
+        <a href="/notifications" class="d-block text-center py-2 fw-semibold text-decoration-none" style="font-size:.8rem;border-top:1px solid #e3e7ef;">View all notifications</a>
+      </div>
+    </div>
+
     <span class="top-user-badge d-none d-sm-flex align-items-center gap-2">
       <i class="bi bi-person-circle"></i>
       <%= user.name %> &nbsp;·&nbsp;
@@ -31,3 +51,57 @@
     <%- include('_sidebar-nav') %>
   </div>
 </div>
+
+<script>
+(function () {
+  var root = document.getElementById('notifDropdown');
+  if (!root) return;
+  var list = root.querySelector('[data-notif-list]');
+  var badge = root.querySelector('[data-notif-badge]');
+  var readAll = root.querySelector('[data-notif-readall]');
+
+  function setBadge(n) {
+    badge.textContent = n > 99 ? '99+' : n;
+    badge.classList.toggle('d-none', !n);
+  }
+  function ago(iso) {
+    var s = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
+    if (s < 60) return 'just now';
+    if (s < 3600) return Math.floor(s / 60) + 'm ago';
+    if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+    return Math.floor(s / 86400) + 'd ago';
+  }
+  function render(data) {
+    setBadge(data.unread);
+    list.textContent = '';
+    if (!data.items.length) {
+      var e = document.createElement('div');
+      e.className = 'text-center text-muted py-4'; e.style.fontSize = '.82rem';
+      e.textContent = 'You are all caught up.'; list.appendChild(e); return;
+    }
+    data.items.forEach(function (n) {
+      var a = document.createElement('a');
+      a.href = n.link || '/notifications';
+      a.className = 'd-block px-3 py-2 text-decoration-none';
+      a.style.cssText = 'border-bottom:1px solid #f0f2f6;color:#2B140A;' + (n.is_read ? '' : 'background:#FBEAEA;');
+      var t = document.createElement('div'); t.className = 'fw-semibold'; t.style.fontSize = '.82rem'; t.textContent = n.title;
+      var m = document.createElement('div'); m.className = 'text-muted'; m.style.fontSize = '.76rem'; m.textContent = n.message;
+      var w = document.createElement('div'); w.style.cssText = 'font-size:.68rem;color:#9ca3af;'; w.textContent = ago(n.created_at);
+      a.appendChild(t); a.appendChild(m); a.appendChild(w);
+      a.addEventListener('click', function () {
+        if (!n.is_read) fetch('/notifications/' + n.id + '/read', { method: 'POST', headers: { Accept: 'application/json' }, keepalive: true });
+      });
+      list.appendChild(a);
+    });
+  }
+  root.addEventListener('show.bs.dropdown', function () {
+    fetch('/notifications/recent', { headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.json(); }).then(render)
+      .catch(function () { list.textContent = 'Could not load notifications.'; });
+  });
+  readAll.addEventListener('click', function () {
+    fetch('/notifications/read-all', { method: 'POST', headers: { Accept: 'application/json' } })
+      .then(function () { setBadge(0); list.querySelectorAll('a').forEach(function (a) { a.style.background = ''; }); });
+  });
+})();
+</script>

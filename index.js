@@ -6,12 +6,15 @@ import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
 import { setLocals } from './middleware/authMiddleware.js';
+import { setNotificationLocals } from './middleware/notificationLocals.js';   // NEW
 import passport from 'passport';
-import authRoutes      from './routes/auth.js';
-import studentRoutes   from './routes/student.js';
-import adminRoutes     from './routes/admin.js';
-import mentorRoutes    from './routes/mentor.js';
-import marketingRoutes from './routes/marketing.js';
+import authRoutes          from './routes/auth.js';
+import studentRoutes       from './routes/student.js';
+import adminRoutes         from './routes/admin.js';
+import mentorRoutes        from './routes/mentor.js';
+import marketingRoutes     from './routes/marketing.js';
+import notificationRoutes  from './routes/notifications.js';                   // NEW
+import { drain }           from './service/notificationService.js';            // NEW
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -28,8 +31,8 @@ app.use(express.json());
 
 app.use(session({
   secret: process.env.SESSION_SECRET,
-  resave: true,            // ← was false
-  saveUninitialized: true, // ← was false
+  resave: true,
+  saveUninitialized: true,
   cookie: {
     maxAge: 1000 * 60 * 60 * 24, //1day
     httpOnly: true
@@ -42,16 +45,14 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 app.use(setLocals);
+app.use(setNotificationLocals);                                                // NEW: sets res.locals.unreadCount
 
-app.use('/',        marketingRoutes);
-app.use('/auth',    authRoutes);
-app.use('/student', studentRoutes);
-app.use('/admin',   adminRoutes);
-app.use('/mentor',  mentorRoutes);
-
-// Old app.get('/', ...) redirect removed — marketingRoutes' GET '/' handler
-// does the same "logged-in users get sent to their dashboard" check, and
-// shows the public marketing home page to everyone else instead.
+app.use('/',              marketingRoutes);
+app.use('/auth',          authRoutes);
+app.use('/student',       studentRoutes);
+app.use('/admin',         adminRoutes);
+app.use('/mentor',        mentorRoutes);
+app.use('/notifications', notificationRoutes);                                 // NEW
 
 app.use((req, res) => {
   res.status(404).render('error', {
@@ -60,7 +61,6 @@ app.use((req, res) => {
     user: req.user || null
   });
 });
-
 
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err);
@@ -71,6 +71,15 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
+// Let queued emails finish before the process exits (Ctrl+C / deploy restarts).
+for (const sig of ['SIGINT', 'SIGTERM']) {
+  process.on(sig, async () => {
+    server.close();
+    await drain();
+    process.exit(0);
+  });
+}

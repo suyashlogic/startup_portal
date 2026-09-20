@@ -6,7 +6,8 @@ import GoogleStrategy from "passport-google-oauth20";
 import db from '../config/db.js';
 
 import crypto from "crypto";
-import { sendPasswordResetEmail } from "../service/email.js";
+import notificationService from "../service/notificationService.js";
+import { audit } from "../service/auditService.js";
 
 const saltRounds = 10;
 const router = express.Router();
@@ -113,6 +114,7 @@ passport.use(
           );
 
           user = newUser.rows[0];
+          if (hasRole) await notificationService.userRegistered(user);
         }
 
         return cb(null, user);
@@ -197,29 +199,25 @@ router.post('/register', async (req, res) => {
       return res.redirect('/auth/register');
     }
 
-    bcrypt.hash(password, saltRounds, async (err, hash) => {
+    const hash = await bcrypt.hash(password, saltRounds);
+
+    const result = await db.query(
+      `INSERT INTO users (name, email, password_hash, role, auth_provider, is_profile_complete)
+       VALUES ($1, $2, $3, $4, 'local', true)
+       RETURNING id, name, email, role, is_profile_complete`,
+      [name, email, hash, role]
+    );
+
+    const user = result.rows[0];
+    req.login(user, async (err) => {
       if (err) {
-        console.error("Error hashing password:", err);
-        req.flash('error', 'Something went wrong. Please try again.');
-        return res.redirect('/auth/register');
+        console.error("Login error:", err);
+        return res.redirect('/auth/login');
       }
-
-      const result = await db.query(
-        `INSERT INTO users (name, email, password_hash, role, auth_provider, is_profile_complete)
-         VALUES ($1, $2, $3, $4, 'local', true)
-         RETURNING id, name, email, role, is_profile_complete`,
-        [name, email, hash, role]
-      );
-
-      const user = result.rows[0];
-      req.login(user, (err) => {
-        if (err) {
-          console.error("Login error:", err);
-          return res.redirect('/auth/login');
-        }
-        req.flash('success', `Welcome, ${name}! Your account has been created.`);
-        return res.redirect(dashboardRedirect(role));
-      });
+      await notificationService.userRegistered(user);
+      await audit(req, 'USER_REGISTERED', 'user', user.id, { details: { role } });
+      req.flash('success', `Welcome, ${name}! Your account has been created.`);
+      return res.redirect(dashboardRedirect(role));
     });
 
   } catch (err) {
@@ -266,6 +264,8 @@ router.post('/select-role', async (req, res) => {
       'UPDATE users SET role=$1, is_profile_complete=true WHERE id=$2',
       [role, req.user.id]
     );
+    await notificationService.userRegistered({ ...req.user, role });   // deduped, so safe if it fires twice
+    await audit(req, 'ROLE_SELECTED', 'user', req.user.id, { details: { role } });
     req.flash('success', `You're all set as a ${role}!`);
     return res.redirect(dashboardRedirect(role));
   } catch (err) {
@@ -299,7 +299,7 @@ router.post("/forgot-password", async (req, res) => {
 
     if (result.rows.length === 0) {
       return res.render("auth/forgot-password", {
-        error: "If this email exists, a reset link will be sent."
+        success: "If this email exists, a reset link has been sent."
       });
     }
 
@@ -322,15 +322,11 @@ router.post("/forgot-password", async (req, res) => {
       [resetToken, expiry, user.id]
     );
 
-    const baseUrl   = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
+    const baseUrl   = process.env.APP_BASE_URL || process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     const resetLink = `${baseUrl}/auth/reset-password/${resetToken}`;
 
 
-    await sendPasswordResetEmail({
-      email: user.email,
-      name: user.name,
-      resetLink
-    });
+    await notificationService.passwordResetRequested({ user, resetLink });
 
 
     res.render("auth/forgot-password", {
@@ -389,9 +385,14 @@ router.post("/reset-password/:token", async (req, res) => {
       });
     }
 
+    const strength = isStrongPassword(password || "");
+    if (!strength.valid) {
+      return res.render("auth/reset-password", { token, error: strength.message });
+    }
+
     const result = await db.query(
       `
-      SELECT id
+      SELECT id, name, email
       FROM users
       WHERE reset_token = $1
         AND reset_token_expiry > NOW()
@@ -406,7 +407,7 @@ router.post("/reset-password/:token", async (req, res) => {
       });
     }
 
-    const userId = result.rows[0].id;
+    const { id: userId, name: userName, email: userEmail } = result.rows[0];
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -420,6 +421,9 @@ router.post("/reset-password/:token", async (req, res) => {
       `,
       [hashedPassword, userId]
     );
+
+    await notificationService.passwordChanged({ id: userId, name: userName, email: userEmail });
+    await audit(req, 'PASSWORD_RESET_COMPLETED', 'user', userId, { actor: { id: userId, name: userName, role: null } });
 
     res.render("auth/reset-password", {
       token,

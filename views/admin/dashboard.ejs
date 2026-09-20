@@ -216,6 +216,53 @@
 
       </div><!-- /row -->
 
+      <!-- ── Operations: notifications, email health, audit trail ── -->
+      <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+          <a href="/notifications" class="text-decoration-none">
+            <div class="stat-card" style="border-top-color:#F1AB27;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:#FCEFD6;">
+                  <i class="bi bi-bell" style="font-size:1.1rem;color:#8A5A0B;"></i>
+                </div>
+                <div><div class="stat-val" style="color:#8A5A0B;"><%= ops.unread %></div><div class="stat-lbl">Unread Notifications</div></div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+          <a href="/admin/email-logs?status=failed" class="text-decoration-none">
+            <div class="stat-card" style="border-top-color:<%= ops.failedEmails ? '#c0392b' : '#1a7a4a' %>;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:<%= ops.failedEmails ? '#fee2e2' : '#f0fdf4' %>;">
+                  <i class="bi bi-envelope-exclamation" style="font-size:1.1rem;color:<%= ops.failedEmails ? '#c0392b' : '#1a7a4a' %>;"></i>
+                </div>
+                <div><div class="stat-val" style="color:<%= ops.failedEmails ? '#c0392b' : '#1a7a4a' %>;"><%= ops.failedEmails %></div><div class="stat-lbl">Failed Emails (7 days)</div></div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-12 col-xl-6">
+          <div class="card border-0 shadow-sm h-100" style="border-radius:12px;">
+            <div class="card-body p-3">
+              <div class="card-section-title mb-2"><i class="bi bi-activity me-1"></i>Recent activity</div>
+              <% if (ops.activity.length === 0) { %>
+                <div class="text-muted" style="font-size:.8rem;">No activity recorded yet.</div>
+              <% } else { %>
+                <% ops.activity.forEach(function(a){ %>
+                  <div class="d-flex align-items-center gap-2 py-1" style="font-size:.78rem;">
+                    <i class="bi <%= a.result === 'success' ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger' %>" style="font-size:.7rem;"></i>
+                    <span class="fw-semibold"><%= a.action.replace(/_/g, ' ').toLowerCase() %></span>
+                    <span class="text-muted text-truncate">· <%= a.actor_name || 'system' %><% if (a.entity_type) { %> · <%= a.entity_type %> #<%= a.entity_id %><% } %></span>
+                    <span class="ms-auto text-muted" style="font-size:.7rem;white-space:nowrap;"><%= new Date(a.created_at).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}) %></span>
+                  </div>
+                <% }); %>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- ── Quick Action Cards ── -->
       <div class="row g-3">
 

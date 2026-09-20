@@ -1,6 +1,8 @@
 import express from "express";
 import db from '../config/db.js';
 import { requireMentor } from '../middleware/authMiddleware.js';
+import notificationService from '../service/notificationService.js';
+import { audit } from '../service/auditService.js';
 
 const router = express.Router();
 
@@ -162,11 +164,14 @@ router.post('/startup/:id/feedback', requireMentor, async (req, res) => {
       return res.redirect('/mentor/dashboard');
     }
 
-    await db.query(
+    const inserted = await db.query(
       `INSERT INTO mentor_feedback (startup_id, mentor_id, feedback)
-       VALUES ($1, $2, $3)`,
+       VALUES ($1, $2, $3)
+       RETURNING id`,
       [id, req.user.id, feedback.trim()]
     );
+    await audit(req, 'FEEDBACK_SUBMITTED', 'startup', Number(id), { details: { feedbackId: inserted.rows[0].id } });
+    await notificationService.mentorFeedbackAdded(inserted.rows[0].id);
 
     req.flash('success', 'Feedback submitted successfully!');
     res.redirect(`/mentor/startup/${id}`);

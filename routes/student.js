@@ -2,8 +2,24 @@ import express from "express";
 import db from '../config/db.js';
 import { upload, uploadProposal } from '../middleware/upload.js';
 import { requireStudent } from '../middleware/authMiddleware.js';
+import notificationService from '../service/notificationService.js';
+import { audit } from '../service/auditService.js';
+import fs from 'fs/promises';
 
 const router = express.Router();
+
+// Multer writes the file before our handler runs. If we then reject the request, don't leave it orphaned.
+const discardUpload = (req) => (req.file ? fs.unlink(req.file.path).catch(() => {}) : Promise.resolve());
+
+// Only the owning student may act on a startup. Returns the row or null.
+async function ownedStartup(startupId, studentId) {
+  if (!/^\d+$/.test(String(startupId))) return null;
+  const r = await db.query(
+    `SELECT id, status FROM startups WHERE id = $1 AND student_id = $2 AND is_deleted = false`,
+    [startupId, studentId]
+  );
+  return r.rows[0] || null;
+}
 
 // ── GET /student/dashboard ───────────────────────────────────────
 // dashboard.ejs expects: startups[], stats.{ total, pending, approved, rejected }
@@ -88,11 +104,16 @@ router.post('/startup/new', requireStudent, upload.single('pitch_deck'), async (
   try {
     const pitchDeckUrl = req.file ? '/uploads/' + req.file.filename : null;
 
-    await db.query(
+    const inserted = await db.query(
       `INSERT INTO startups (title, description, domain, stage, pitch_deck_url, student_id)
-       VALUES ($1, $2, $3, $4, $5, $6)`,
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
       [title, description, domain, stage, pitchDeckUrl, req.user.id]
     );
+
+    const startupId = inserted.rows[0].id;
+    await audit(req, 'STARTUP_SUBMITTED', 'startup', startupId);
+    await notificationService.startupSubmitted(startupId);
 
     req.flash('success', 'Startup submitted! Admin will review it soon.');
     res.redirect('/student/dashboard');
@@ -183,11 +204,19 @@ router.post('/startup/:id/progress', requireStudent, async (req, res) => {
   }
 
   try {
-    await db.query(
+    if (!(await ownedStartup(id, req.user.id))) {
+      req.flash('error', 'Startup not found.');
+      return res.redirect('/student/dashboard');
+    }
+
+    const inserted = await db.query(
       `INSERT INTO progress_updates (startup_id, author_id, description)
-       VALUES ($1, $2, $3)`,
+       VALUES ($1, $2, $3)
+       RETURNING id`,
       [id, req.user.id, description.trim()]
     );
+    await audit(req, 'PROGRESS_POSTED', 'startup', Number(id), { details: { updateId: inserted.rows[0].id } });
+    await notificationService.progressUpdateAdded(inserted.rows[0].id);
     req.flash('success', 'Progress update added!');
     res.redirect(`/student/startup/${id}`);
   } catch (err) {
@@ -204,23 +233,42 @@ router.post('/startup/:id/funding', requireStudent, uploadProposal.single('propo
   const { id } = req.params;
 
   if (!amount || !purpose) {
+    await discardUpload(req);
     req.flash('error', 'Amount and purpose are required.');
     return res.redirect(`/student/startup/${id}`);
   }
 
   if (isNaN(amount) || Number(amount) <= 0) {
+    await discardUpload(req);
     req.flash('error', 'Please enter a valid amount.');
     return res.redirect(`/student/startup/${id}`);
   }
 
   try {
+    // Ownership + "approved only" are enforced here, not just hidden in the UI.
+    const startup = await ownedStartup(id, req.user.id);
+    if (!startup) {
+      await discardUpload(req);
+      req.flash('error', 'Startup not found.');
+      return res.redirect('/student/dashboard');
+    }
+    if (startup.status !== 'approved') {
+      await discardUpload(req);
+      req.flash('error', 'Funding can only be requested after your startup is approved.');
+      return res.redirect(`/student/startup/${id}`);
+    }
+
     const proposalFile = req.file ? '/uploads/' + req.file.filename : null;
 
-    await db.query(
+    const inserted = await db.query(
       `INSERT INTO funding_requests (startup_id, amount_requested, purpose, proposal_file)
-       VALUES ($1, $2, $3, $4)`,
+       VALUES ($1, $2, $3, $4)
+       RETURNING id`,
       [id, amount, purpose.trim(), proposalFile]
     );
+    const fundingId = inserted.rows[0].id;
+    await audit(req, 'FUNDING_REQUESTED', 'funding', fundingId, { details: { startupId: Number(id), amount: Number(amount) } });
+    await notificationService.fundingSubmitted(fundingId);
     req.flash('success', 'Funding request submitted!');
     res.redirect(`/student/startup/${id}`);
   } catch (err) {
