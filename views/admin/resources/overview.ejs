@@ -1,0 +1,95 @@
+<%- include('_top', { title, heading: 'Resource Management', icon: 'bi-boxes', sub: 'Inventory, requests and equipment health at a glance', active: 'overview',
+    actions: '<a href="/admin/resources/new" class="btn btn-white fw-bold"><i class="bi bi-plus-lg me-1"></i> Add resource</a>' }) %>
+
+<% const S = o.byStatus;
+   const cards = [
+     ['Total assets', o.total, 'bi-collection', 'var(--ip-red)', 'var(--ip-red-pale)', '/admin/resources'],
+     ['Available', S.AVAILABLE||0, 'bi-check-circle', '#1a7a4a', '#f0fdf4', '/admin/resources?status=AVAILABLE'],
+     ['Issued', (S.ISSUED||0)+(S.IN_USE||0), 'bi-box-arrow-up-right', '#1d4ed8', '#eff6ff', '/admin/resources/assignments'],
+     ['Reserved', S.RESERVED||0, 'bi-bookmark-check', '#d97706', '#fef9ec', '/admin/resources?status=RESERVED'],
+     ['Maintenance', S.MAINTENANCE||0, 'bi-tools', '#7c3aed', '#f5f3ff', '/admin/resources?status=MAINTENANCE'],
+     ['Damaged', S.DAMAGED||0, 'bi-exclamation-triangle', '#c0392b', '#fee2e2', '/admin/resources?status=DAMAGED'],
+     ['Retired', S.RETIRED||0, 'bi-archive', '#475569', '#f1f5f9', '/admin/resources?status=RETIRED'],
+     ['Overdue', o.overdue, 'bi-alarm', '#c0392b', '#fee2e2', '/admin/resources/assignments?view=overdue']
+   ]; %>
+<div class="row g-3 mb-4">
+  <% cards.forEach(function(c){ %>
+  <div class="col-6 col-md-3">
+    <a href="<%= c[5] %>" class="text-decoration-none">
+      <div class="stat-card" style="border-top-color:<%= c[3] %>;">
+        <div class="d-flex align-items-center gap-3">
+          <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:<%= c[4] %>;"><i class="bi <%= c[2] %>" style="color:<%= c[3] %>;"></i></div>
+          <div><div class="stat-val" style="color:<%= c[3] %>;"><%= c[1] %></div><div class="stat-lbl"><%= c[0] %></div></div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <% }); %>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4"><a href="/admin/resources/requests" class="text-decoration-none"><div class="card border-0 shadow-sm p-3" style="border-radius:12px;"><div class="d-flex justify-content-between align-items-center"><span class="fw-semibold" style="font-size:.85rem;color:#111;"><i class="bi bi-inbox me-2 text-primary"></i>Pending requests</span><span class="badge bg-primary rounded-pill"><%= o.pendingRequests %></span></div></div></a></div>
+  <div class="col-md-4"><div class="card border-0 shadow-sm p-3" style="border-radius:12px;"><div class="d-flex justify-content-between align-items-center"><span class="fw-semibold" style="font-size:.85rem;"><i class="bi bi-calendar-check me-2 text-primary"></i>Pending bookings</span><span class="badge bg-primary rounded-pill"><%= o.pendingBookings %></span></div></div></div>
+  <div class="col-md-4"><a href="/admin/resources/issues" class="text-decoration-none"><div class="card border-0 shadow-sm p-3" style="border-radius:12px;"><div class="d-flex justify-content-between align-items-center"><span class="fw-semibold" style="font-size:.85rem;color:#111;"><i class="bi bi-flag me-2 text-primary"></i>Open issues</span><span class="badge bg-primary rounded-pill"><%= o.openIssues %></span></div></div></a></div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-pie-chart me-1"></i>Resources by category</div>
+      <% if (!o.byCategory.length) { %><p class="text-muted mb-0" style="font-size:.85rem;">No resources yet.</p>
+      <% } else { %><div style="height:240px;"><canvas id="catChart"></canvas></div><% } %>
+    </div></div>
+  </div>
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <div class="card-section-title mb-2"><i class="bi bi-alarm me-1"></i>Overdue resources</div>
+        <span class="badge rs-overdue"><%= o.overdue %></span>
+      </div>
+      <% if (!o.overdueList.length) { %><p class="text-muted mb-0" style="font-size:.85rem;">Nothing is overdue.</p>
+      <% } else { %>
+        <table class="table table-sm align-middle mb-2"><thead><tr><th>Student</th><th>Resource</th><th>Due</th><th>Days late</th></tr></thead><tbody>
+          <% o.overdueList.forEach(function(x){ %><tr><td><%= x.student_name %></td><td><%= x.resource_name %> <span class="text-muted">(<%= x.asset_code %>)</span></td><td><%= h.date(x.expected_return_at) %></td><td><span class="badge rs-overdue"><%= x.days_overdue %></span></td></tr><% }); %>
+        </tbody></table>
+        <a href="/admin/resources/assignments?view=overdue" class="btn btn-outline-secondary btn-sm">View all overdue</a>
+      <% } %>
+    </div></div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-4"><div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+    <div class="card-section-title"><i class="bi bi-currency-rupee me-1"></i>Maintenance cost this month</div>
+    <div style="font-size:2rem;font-weight:700;color:var(--ip-red);"><%= h.inr(o.maintenanceCostMonth) %></div>
+    <div class="card-section-title mt-3" style="font-size:.7rem;">Most expensive to maintain</div>
+    <% if (!o.costliest.length) { %><p class="text-muted mb-0" style="font-size:.82rem;">No completed maintenance yet.</p><% } %>
+    <% o.costliest.forEach(function(x){ %><div class="d-flex justify-content-between py-1" style="font-size:.83rem;"><span><%= x.name %> <span class="text-muted"><%= x.asset_code %></span></span><strong><%= h.inr(x.total) %></strong></div><% }); %>
+  </div></div></div>
+  <div class="col-lg-4"><div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+    <div class="card-section-title"><i class="bi bi-graph-up me-1"></i>Most used resources</div>
+    <% if (!o.mostUsed.length) { %><p class="text-muted mb-0" style="font-size:.82rem;">Usage will appear once items are issued or booked.</p><% } %>
+    <% const mx = o.mostUsed.length ? Number(o.mostUsed[0].uses) : 1; o.mostUsed.forEach(function(x){ %>
+      <div class="mb-2"><div class="d-flex justify-content-between" style="font-size:.83rem;"><span><%= x.name %></span><strong><%= x.uses %></strong></div>
+      <div class="progress" style="height:6px;"><div class="progress-bar" style="width:<%= Math.round(Number(x.uses)/mx*100) %>%;"></div></div></div>
+    <% }); %>
+  </div></div></div>
+  <div class="col-lg-4"><div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+    <div class="card-section-title"><i class="bi bi-shield-exclamation me-1"></i>Warranty expiring (<%= warrantyDays %> days)</div>
+    <% if (!o.warranty.length) { %><p class="text-muted mb-0" style="font-size:.82rem;">No warranties expiring soon.</p><% } %>
+    <% o.warranty.forEach(function(x){ %><a href="/admin/resources/<%= x.id %>" class="d-flex justify-content-between py-1 text-decoration-none" style="font-size:.83rem;color:#111;"><span><%= x.name %> <span class="text-muted"><%= x.asset_code %></span></span><span class="badge rs-reserved">in <%= x.days_left %> d</span></a><% }); %>
+  </div></div></div>
+</div>
+
+<% if (o.byCategory.length) { %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+new Chart(document.getElementById('catChart'), { type: 'doughnut',
+  data: { labels: <%- JSON.stringify(o.byCategory.map(x => x.name)).replace(/</g, '\\u003c') %>,
+          datasets: [{ data: <%- JSON.stringify(o.byCategory.map(x => x.n)) %>, borderWidth: 0,
+          backgroundColor: ['#CE4048','#F1AB27','#1EE5EB','#662C11','#7c3aed','#1a7a4a','#3b82f6','#d97706','#DE6169','#475569','#0E7478','#8A7A70'] }] },
+  options: { maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 } } } } } });
+</script>
+<% } %>
+
+<%- include('_bottom') %>

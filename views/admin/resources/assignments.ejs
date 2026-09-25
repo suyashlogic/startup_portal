@@ -1,0 +1,50 @@
+<%- include('_top', { title, heading: 'Assignments', icon: 'bi-person-check', sub: 'Issued equipment, returns and overdue items', active: 'assignments', actions: '' }) %>
+<ul class="nav nav-tabs mb-3" style="font-size:.85rem;">
+  <% [['open','Currently out'],['overdue','Overdue'],['returned','Returned'],['all','All']].forEach(function(t){ %>
+    <li class="nav-item"><a class="nav-link <%= view === t[0] ? 'active' : '' %>" href="/admin/resources/assignments?view=<%= t[0] %>"><%= t[1] %></a></li><% }); %>
+</ul>
+<div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-0">
+  <% if (!assignments.length) { %><div class="text-center py-5 text-muted" style="font-size:.9rem;"><i class="bi bi-check2-circle d-block mb-2" style="font-size:2rem;color:#d1d5db;"></i>Nothing to show here.</div>
+  <% } else { %>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th class="ps-4">Student</th><th>Resource</th><th>Issued</th><th>Due</th><th>Status</th><th>Condition</th><th class="text-end pe-4">Action</th></tr></thead><tbody>
+    <% assignments.forEach(function(a){ const isOpen = ['ACTIVE','RETURN_REQUESTED','OVERDUE'].includes(a.status); const late = isOpen && Number(a.days_overdue) > 0; %>
+      <tr>
+        <td class="ps-4" style="font-size:.85rem;"><%= a.student_name %><div class="text-muted" style="font-size:.72rem;"><%= a.startup_title || '' %></div></td>
+        <td class="fw-semibold" style="font-size:.85rem;"><%= a.resource_name %><div class="text-muted fw-normal" style="font-size:.72rem;"><%= a.asset_code %> ×<%= a.quantity %></div></td>
+        <td style="font-size:.8rem;"><%= h.date(a.issued_at) %></td>
+        <td style="font-size:.8rem;"><%= h.date(a.expected_return_at) %><% if (late) { %><div><span class="badge rs-overdue"><%= a.days_overdue %> day<%= a.days_overdue > 1 ? 's' : '' %> late</span></div><% } %></td>
+        <td><%- h.badge(a.status) %></td>
+        <td style="font-size:.78rem;">Issue: <%- h.badge(a.issue_condition) %><% if (a.return_condition) { %><br>Return: <%- h.badge(a.return_condition) %><% } %></td>
+        <td class="text-end pe-4"><% if (isOpen) { %>
+          <button class="btn btn-primary btn-sm fw-semibold" style="font-size:.75rem;" data-bs-toggle="modal" data-bs-target="#returnModal"
+            data-action="/admin/resources/assignments/<%= a.id %>/return" data-name="<%= a.resource_name %> (<%= a.asset_code %>)" data-student="<%= a.student_name %>" data-issue="<%= h.label(a.issue_condition) %>">
+            <%= a.status === 'RETURN_REQUESTED' ? 'Inspect return' : 'Receive return' %></button>
+        <% } else if (a.inspection_notes) { %><span class="text-muted" style="font-size:.75rem;" title="<%= a.inspection_notes %>"><i class="bi bi-journal-text"></i> Notes</span><% } %></td>
+      </tr>
+    <% }); %></tbody></table></div>
+  <% } %>
+</div></div>
+
+<div class="modal fade" id="returnModal" tabindex="-1"><div class="modal-dialog"><form method="POST" class="modal-content">
+  <div class="modal-header"><h6 class="modal-title fw-bold">Return inspection</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="p-3 rounded-3 mb-3" style="background:#f8f9fa;border:1px solid #e3e7ef;font-size:.85rem;">
+      <div><strong id="rName"></strong></div><div class="text-muted">Issued to <span id="rStudent"></span> · Condition at issue: <span id="rIssue"></span></div></div>
+    <div class="mb-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Current condition <span class="text-danger">*</span></label>
+      <select name="return_condition" class="form-select" required><% ['GOOD','FAIR','MINOR_DAMAGE','MAJOR_DAMAGE','LOST'].forEach(function(c){ %><option value="<%= c %>"><%= h.label(c) %></option><% }); %></select>
+      <div class="form-text" style="font-size:.72rem;">Damaged items are marked Damaged and need maintenance. Lost items become Unavailable.</div></div>
+    <div><label class="form-label fw-semibold" style="font-size:.85rem;">Inspection notes</label><textarea name="inspection_notes" class="form-control" rows="3"></textarea></div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button class="btn btn-primary fw-semibold">Complete return</button></div>
+</form></div></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('returnModal').addEventListener('show.bs.modal', function (e) {
+  var b = e.relatedTarget; this.querySelector('form').action = b.getAttribute('data-action');
+  document.getElementById('rName').textContent = b.getAttribute('data-name');
+  document.getElementById('rStudent').textContent = b.getAttribute('data-student');
+  document.getElementById('rIssue').textContent = b.getAttribute('data-issue');
+});
+</script>
+</div></main></div></body></html>

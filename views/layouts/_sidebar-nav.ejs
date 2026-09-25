@@ -13,6 +13,20 @@
     <a href="/student/startups" class="sidebar-link">
       <i class="bi bi-rocket s-icon"></i> My Startups
     </a>
+    <div class="sidebar-section mt-2">Resources</div>
+    <a href="/student/resources" class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/student/resources' ? 'active' : '' %>">
+      <i class="bi bi-boxes s-icon"></i> Browse Resources
+    </a>
+    <a href="/student/my-resources" class="sidebar-link">
+      <i class="bi bi-person-check s-icon"></i> My Resources
+    </a>
+    <a href="/student/my-bookings" class="sidebar-link">
+      <i class="bi bi-calendar-week s-icon"></i> My Bookings
+    </a>
+    <a href="/student/report-issue" class="sidebar-link">
+      <i class="bi bi-flag s-icon"></i> Report Issue
+    </a>
+    <div class="sidebar-section mt-2">Account</div>
     <a href="/notifications" class="sidebar-link">
       <i class="bi bi-bell s-icon"></i> Notifications
       <% if (typeof unreadCount !== 'undefined' && unreadCount > 0) { %><span class="badge rounded-pill ms-auto" style="background:#CE4048;color:#fff;font-size:.65rem;"><%= unreadCount %></span><% } %>
@@ -35,6 +49,31 @@
     <a href="/admin/email-logs" class="sidebar-link">
       <i class="bi bi-envelope-check s-icon"></i> Email Activity
     </a>
+    <div class="sidebar-section mt-2">Resource Management</div>
+    <a href="/admin/resources/overview" class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/admin/resources/overview' ? 'active' : '' %>">
+      <i class="bi bi-boxes s-icon"></i> Overview
+    </a>
+    <a href="/admin/resources" class="sidebar-link <%= typeof currentPath !== 'undefined' && currentPath === '/admin/resources' ? 'active' : '' %>">
+      <i class="bi bi-collection s-icon"></i> All Resources
+    </a>
+    <a href="/admin/resources/requests" class="sidebar-link">
+      <i class="bi bi-inbox s-icon"></i> Requests
+    </a>
+    <a href="/admin/resources/bookings" class="sidebar-link">
+      <i class="bi bi-calendar3 s-icon"></i> Bookings
+    </a>
+    <a href="/admin/resources/assignments" class="sidebar-link">
+      <i class="bi bi-person-check s-icon"></i> Assignments
+    </a>
+    <a href="/admin/resources/issues" class="sidebar-link">
+      <i class="bi bi-flag s-icon"></i> Issues
+    </a>
+    <a href="/admin/resources/maintenance" class="sidebar-link">
+      <i class="bi bi-tools s-icon"></i> Maintenance
+    </a>
+    <a href="/admin/resources/categories" class="sidebar-link">
+      <i class="bi bi-tags s-icon"></i> Categories
+    </a>
     <div class="sidebar-section mt-2">Account</div>
     <a href="/notifications" class="sidebar-link">
       <i class="bi bi-bell s-icon"></i> Notifications
@@ -47,6 +86,9 @@
     </a>
     <a href="/mentor/feedback" class="sidebar-link">
       <i class="bi bi-chat-square-text s-icon"></i> Feedback
+    </a>
+    <a href="/mentor/resources" class="sidebar-link">
+      <i class="bi bi-boxes s-icon"></i> Startup Resources
     </a>
     <a href="/notifications" class="sidebar-link">
       <i class="bi bi-bell s-icon"></i> Notifications

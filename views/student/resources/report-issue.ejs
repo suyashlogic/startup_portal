@@ -1,0 +1,39 @@
+<%- include('_top', { title, heading: 'Report an Issue', icon: 'bi-flag', sub: 'Tell the incubation cell about a damaged or malfunctioning item', active: 'requests', actions: '' }) %>
+
+<% if (formError) { %><div class="alert alert-danger border-0" style="font-size:.875rem;"><i class="bi bi-exclamation-triangle-fill me-2"></i><%= formError %></div><% } %>
+
+<div class="row g-4 align-items-start">
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm" style="border-radius:14px;border-top:3px solid var(--ip-red) !important;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-flag me-1"></i>Describe the problem</div>
+      <% if (!resource) { %>
+        <p class="text-muted mb-3" style="font-size:.85rem;">Pick which item this is about — either something currently issued to you, or search the catalog.</p>
+        <% if (current.length) { %>
+          <div class="mb-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Your current equipment</label>
+            <div class="d-flex flex-column gap-2">
+              <% current.forEach(function(a){ %><a href="/student/report-issue?resource_id=<%= a.resource_id %>" class="btn btn-outline-secondary text-start" style="font-size:.85rem;"><%= a.resource_name %> <span class="text-muted">(<%= a.asset_code %>)</span></a><% }); %>
+            </div></div>
+        <% } %>
+        <a href="/student/resources" class="btn btn-outline-primary btn-sm"><i class="bi bi-search me-1"></i>Or search the catalog</a>
+      <% } else { %>
+        <div class="p-3 rounded-3 mb-3" style="background:#f8f9fa;border:1px solid #e3e7ef;font-size:.85rem;"><strong><%= resource.name %></strong> <span class="text-muted">(<%= resource.asset_code %>)</span></div>
+        <form action="/student/resources/<%= resource.id %>/report-issue" method="POST" enctype="multipart/form-data">
+          <div class="row g-3">
+            <div class="col-md-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Issue type <span class="text-danger">*</span></label>
+              <select name="issue_type" class="form-select" required>
+                <option value="">Select…</option><option value="DAMAGED">Damaged</option><option value="MALFUNCTION">Malfunction</option>
+                <option value="MISSING_PART">Missing part</option><option value="LOST">Lost</option><option value="OTHER">Other</option></select></div>
+            <div class="col-md-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Priority</label>
+              <select name="priority" class="form-select"><option value="LOW">Low</option><option value="MEDIUM" selected>Medium</option><option value="HIGH">High</option><option value="CRITICAL">Critical</option></select></div>
+            <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Description <span class="text-danger">*</span></label>
+              <textarea name="description" class="form-control" rows="4" required placeholder="What's wrong, and when did you notice it?"></textarea></div>
+            <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Photo <span class="text-muted fw-normal">(optional, JPG/PNG/WEBP/PDF, max 5MB)</span></label>
+              <input type="file" name="attachment" class="form-control" accept=".jpg,.jpeg,.png,.webp,.pdf"/></div>
+          </div>
+          <button class="btn btn-primary fw-bold px-4 mt-4"><i class="bi bi-send me-2"></i>Submit report</button>
+        </form>
+      <% } %>
+    </div></div>
+  </div>
+</div>
+<%- include('_bottom') %>

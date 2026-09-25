@@ -1,0 +1,51 @@
+<% const editing = !!resource; const v = values || {};
+   const p2 = (n) => String(n).padStart(2, '0');
+   const d = (x) => { if (!x) return ''; const t = new Date(x); return t.getFullYear() + '-' + p2(t.getMonth() + 1) + '-' + p2(t.getDate()); }; %>
+<%- include('_top', { title, heading: editing ? 'Edit ' + resource.asset_code : 'Add Resource', icon: editing ? 'bi-pencil-square' : 'bi-plus-circle',
+    sub: editing ? 'Update details. Past assignments and history are never altered.' : 'An asset code (e.g. RP5-001) is generated automatically.', active: 'all',
+    actions: '<a href="' + (editing ? '/admin/resources/' + resource.id : '/admin/resources') + '" class="btn"><i class="bi bi-arrow-left me-1"></i> Back</a>' }) %>
+
+<% if (formError) { %><div class="alert alert-danger border-0" style="font-size:.875rem;"><i class="bi bi-exclamation-triangle-fill me-2"></i><%= formError %></div><% } %>
+<div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-4">
+<form action="<%= editing ? '/admin/resources/' + resource.id + '/edit' : '/admin/resources' %>" method="POST">
+  <div class="row g-3">
+    <div class="col-md-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Resource name <span class="text-danger">*</span></label>
+      <input name="name" class="form-control" required maxlength="150" value="<%= v.name || '' %>" placeholder="Raspberry Pi 5"/></div>
+    <div class="col-md-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Category <span class="text-danger">*</span></label>
+      <select name="category_id" class="form-select" required><option value="">Select…</option>
+        <% categories.forEach(function(c){ %><option value="<%= c.id %>" <%= String(v.category_id) === String(c.id) ? 'selected' : '' %>><%= c.name %></option><% }); %></select></div>
+    <div class="col-md-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Type <span class="text-danger">*</span></label>
+      <% if (editing) { %><input class="form-control" value="<%= h.label(resource.resource_type) %>" disabled/>
+      <% } else { %><select name="resource_type" class="form-select" required>
+        <% enums.TYPES.forEach(function(t){ %><option value="<%= t %>" <%= v.resource_type === t ? 'selected' : '' %>><%= h.label(t) %></option><% }); %></select><% } %></div>
+
+    <div class="col-md-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Brand</label><input name="brand" class="form-control" value="<%= v.brand || '' %>"/></div>
+    <div class="col-md-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Model</label><input name="model" class="form-control" value="<%= v.model || '' %>"/></div>
+    <div class="col-md-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Serial number</label><input name="serial_number" class="form-control" value="<%= v.serial_number || '' %>"/></div>
+    <div class="col-md-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Location</label><input name="location" class="form-control" value="<%= v.location || '' %>" placeholder="Innovation Lab"/></div>
+
+    <div class="col-md-2"><label class="form-label fw-semibold" style="font-size:.85rem;">Quantity</label>
+      <input type="number" min="0" name="quantity" class="form-control" value="<%= v.quantity != null ? v.quantity : 1 %>"/>
+      <div class="form-text" style="font-size:.72rem;">Bookable rooms/machines are always 1.</div></div>
+    <div class="col-md-2"><label class="form-label fw-semibold" style="font-size:.85rem;">Unit</label><input name="unit" class="form-control" value="<%= v.unit || 'unit' %>"/></div>
+    <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Condition</label>
+      <select name="condition" class="form-select"><% enums.CONDITIONS.forEach(function(c){ %><option value="<%= c %>" <%= (v.condition || 'GOOD') === c ? 'selected' : '' %>><%= h.label(c) %></option><% }); %></select></div>
+    <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Status</label>
+      <select name="status" class="form-select">
+        <% ['AVAILABLE','MAINTENANCE','DAMAGED','UNAVAILABLE','RETIRED'].forEach(function(s){ %><option value="<%= s %>" <%= (v.status || 'AVAILABLE') === s ? 'selected' : '' %>><%= h.label(s) %></option><% }); %>
+        <% if (editing && ['ISSUED','IN_USE','RESERVED'].includes(resource.status)) { %><option value="<%= resource.status %>" selected><%= h.label(resource.status) %> (automatic)</option><% } %>
+      </select></div>
+
+    <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Purchase date</label><input type="date" name="purchase_date" class="form-control" value="<%= d(v.purchase_date) %>"/></div>
+    <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Purchase cost (₹)</label><input type="number" min="0" step="0.01" name="purchase_cost" class="form-control" value="<%= v.purchase_cost || '' %>"/></div>
+    <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Warranty expiry</label><input type="date" name="warranty_expiry" class="form-control" value="<%= d(v.warranty_expiry) %>"/></div>
+
+    <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Description</label><textarea name="description" rows="3" class="form-control"><%= v.description || '' %></textarea></div>
+    <% if (editing) { %><div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Note for history <span class="text-muted fw-normal">(optional, saved if the status changes)</span></label><input name="note" class="form-control"/></div><% } %>
+  </div>
+  <div class="d-flex gap-2 pt-4 mt-3 border-top">
+    <button class="btn btn-primary px-4 fw-bold" type="submit"><i class="bi bi-check-lg me-1"></i><%= editing ? 'Save changes' : 'Add resource' %></button>
+    <a href="<%= editing ? '/admin/resources/' + resource.id : '/admin/resources' %>" class="btn btn-outline-secondary">Cancel</a>
+  </div>
+</form></div></div>
+<%- include('_bottom') %>

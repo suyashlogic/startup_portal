@@ -1,0 +1,48 @@
+<%- include('_top', { title, heading: 'Browse Resources', icon: 'bi-boxes', sub: 'Everything the incubation centre has to lend or book', active: 'browse', actions: '' }) %>
+
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;"><div class="card-body py-3 px-4">
+  <form action="/student/resources" method="GET"><div class="row g-2 align-items-end">
+    <div class="col-12 col-md-5"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Search</label>
+      <input type="text" name="q" class="form-control" value="<%= filters.q %>" placeholder="Raspberry Pi, 3D Printer…" style="font-size:.85rem;"/></div>
+    <div class="col-6 col-md-3"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Category</label>
+      <select name="category" class="form-select" style="font-size:.84rem;"><option value="">All categories</option>
+        <% categories.forEach(function(c){ %><option value="<%= c.id %>" <%= filters.category == c.id ? 'selected' : '' %>><%= c.name %></option><% }); %></select></div>
+    <div class="col-6 col-md-2"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Kind</label>
+      <select name="type" class="form-select" style="font-size:.84rem;"><option value="">All</option>
+        <option value="ISSUABLE" <%= filters.type === 'ISSUABLE' ? 'selected' : '' %>>Borrow (issued)</option>
+        <option value="BOOKABLE" <%= filters.type === 'BOOKABLE' ? 'selected' : '' %>>Book a slot</option></select></div>
+    <div class="col-6 col-md-2 d-flex gap-2"><button class="btn btn-primary fw-semibold flex-grow-1" style="font-size:.84rem;"><i class="bi bi-search me-1"></i>Search</button>
+      <a href="/student/resources" class="btn btn-outline-secondary" style="font-size:.84rem;"><i class="bi bi-x-lg"></i></a></div>
+  </div></form>
+</div></div>
+
+<% if (!resources.length) { %>
+  <div class="card border-0 shadow-sm text-center py-5 px-4" style="border-radius:14px;">
+    <i class="bi bi-search" style="font-size:2rem;color:#d1d5db;"></i><h5 class="fw-bold mt-2">Nothing matches</h5>
+    <p class="text-muted mb-0" style="font-size:.875rem;">Try a different search or clear the filters.</p></div>
+<% } else { %>
+<div class="row g-4">
+  <% resources.forEach(function(r){ const bookable = ['BOOKABLE','FACILITY'].includes(r.resource_type); %>
+  <div class="col-12 col-md-6 col-xl-4">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;">
+      <div style="height:4px;border-radius:14px 14px 0 0;background:<%= (bookable ? r.status === 'AVAILABLE' : r.available_qty > 0) ? '#1a7a4a' : '#c0392b' %>;"></div>
+      <div class="card-body p-4 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div><h6 class="fw-bold mb-0" style="font-size:.95rem;color:#111;"><%= r.name %></h6>
+            <span class="text-muted" style="font-size:.75rem;"><%= r.category_name %> · <%= r.asset_code %></span></div>
+          <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.68rem;white-space:nowrap;"><%= bookable ? 'Book a slot' : 'Borrow' %></span>
+        </div>
+        <p class="text-muted mb-3" style="font-size:.83rem;line-height:1.6;flex-grow:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;"><%= r.description || 'No description provided.' %></p>
+        <div class="d-flex align-items-center gap-2 flex-wrap mb-3">
+          <span class="badge" style="background:#f1f5f9;color:#475569;font-size:.68rem;"><i class="bi bi-geo-alt me-1"></i><%= r.location || 'Not specified' %></span>
+          <% if (bookable) { %><%- h.badge(r.status) %>
+          <% } else { %><span class="badge <%= r.available_qty > 0 ? 'rs-available' : 'rs-unavailable' %>"><%= r.available_qty %> of <%= r.quantity %> available</span><% } %>
+        </div>
+        <a href="/student/resources/<%= r.id %>" class="btn btn-outline-primary btn-sm fw-semibold mt-auto"><%= bookable ? 'Check availability' : 'View & request' %> <i class="bi bi-arrow-right ms-1"></i></a>
+      </div>
+    </div>
+  </div>
+  <% }); %>
+</div>
+<% } %>
+<%- include('_bottom') %>

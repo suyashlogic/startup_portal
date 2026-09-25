@@ -1,0 +1,74 @@
+<%- include('_top', { title, heading: resource.name, icon: 'bi-box-seam', sub: 'Asset ' + resource.asset_code + ' · ' + resource.category_name, active: 'all',
+    actions: '<a href="/admin/resources/' + resource.id + '/edit" class="btn"><i class="bi bi-pencil me-1"></i> Edit</a><a href="/admin/resources" class="btn"><i class="bi bi-arrow-left me-1"></i> Back</a>' }) %>
+
+<div class="row g-4 align-items-start">
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-info-circle me-1"></i>Details</div>
+      <div class="d-flex gap-2 mb-3"><%- h.badge(resource.status) %> <%- h.badge(resource.condition) %>
+        <% if (!resource.is_active) { %><span class="badge rs-retired">Deactivated</span><% } %></div>
+      <% const rows = [['Asset code', resource.asset_code], ['Type', h.label(resource.resource_type)], ['Location', resource.location || '—'],
+           ['Brand', resource.brand || '—'], ['Model', resource.model || '—'], ['Serial number', resource.serial_number || '—'],
+           ['Quantity', resource.quantity + ' ' + resource.unit], ['Purchase date', h.date(resource.purchase_date)],
+           ['Purchase cost', h.inr(resource.purchase_cost)], ['Warranty expiry', h.date(resource.warranty_expiry)], ['Added by', resource.created_by_name || '—'], ['Added on', h.date(resource.created_at)]]; %>
+      <table class="table table-sm mb-3" style="font-size:.85rem;"><tbody>
+        <% rows.forEach(function(r){ %><tr><td class="text-muted" style="width:40%;"><%= r[0] %></td><td class="fw-semibold"><%= r[1] %></td></tr><% }); %></tbody></table>
+      <% if (resource.description) { %><p style="font-size:.85rem;color:#374151;"><%= resource.description %></p><% } %>
+      <% if (resource.is_active) { %>
+      <form action="/admin/resources/<%= resource.id %>/deactivate" method="POST" onsubmit="return confirm('Deactivate this resource? It will be hidden from students. History is kept.');">
+        <button class="btn btn-outline-danger btn-sm"><i class="bi bi-slash-circle me-1"></i>Deactivate</button></form>
+      <% } %>
+      <% if (resource.quantity === 1 && ['AVAILABLE','DAMAGED'].includes(resource.status)) { %>
+      <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#dtMaintModal"><i class="bi bi-tools me-1"></i>Start maintenance</button>
+      <% } %>
+    </div></div>
+  </div>
+
+  <div class="col-lg-7">
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-clock-history me-1"></i>History</div>
+      <% if (!history.length) { %><p class="text-muted mb-0" style="font-size:.85rem;">No events recorded.</p><% } %>
+      <div class="rs-timeline">
+      <% history.forEach(function(e){ %>
+        <div class="ev"><div class="text-muted" style="font-size:.72rem;font-weight:600;"><%= h.dt(e.created_at) %><% if (e.actor_name) { %> · <%= e.actor_name %><% } %></div>
+          <div style="font-size:.86rem;"><strong><%= h.label(e.event_type) %></strong>
+            <% if (e.subject_name) { %> → <%= e.subject_name %><% } %>
+            <% if (e.from_status && e.to_status) { %> <span class="text-muted">(<%= h.label(e.from_status) %> → <%= h.label(e.to_status) %>)</span><% } %></div>
+          <% if (e.note) { %><div class="text-muted" style="font-size:.8rem;"><%= e.note %></div><% } %></div>
+      <% }); %></div>
+    </div></div>
+
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-person-check me-1"></i>Assignments</div>
+      <% if (!assignments.length) { %><p class="text-muted mb-0" style="font-size:.85rem;">Never issued.</p><% } else { %>
+      <table class="table table-sm align-middle mb-0" style="font-size:.82rem;"><thead><tr><th>To</th><th>Issued</th><th>Due</th><th>Returned</th><th>Status</th></tr></thead><tbody>
+        <% assignments.forEach(function(a){ %><tr><td><%= a.user_name %><% if (a.startup_title) { %><div class="text-muted" style="font-size:.72rem;"><%= a.startup_title %></div><% } %></td>
+          <td><%= h.date(a.issued_at) %></td><td><%= h.date(a.expected_return_at) %></td><td><%= h.date(a.returned_at) %></td><td><%- h.badge(a.status) %></td></tr><% }); %></tbody></table><% } %>
+    </div></div>
+
+    <% if (maintenance.length || issues.length) { %>
+    <div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-tools me-1"></i>Maintenance &amp; issues</div>
+      <% maintenance.forEach(function(m){ %><div class="d-flex justify-content-between py-1" style="font-size:.83rem;"><span><%= h.label(m.maintenance_type) %> · <%= h.date(m.start_date) %></span><span><%- h.badge(m.status) %> <%= h.inr(m.cost) %></span></div><% }); %>
+      <% issues.forEach(function(i){ %><div class="d-flex justify-content-between py-1" style="font-size:.83rem;"><span><%= h.label(i.issue_type) %>: <%= i.description.slice(0, 60) %></span><%- h.badge(i.status) %></div><% }); %>
+    </div></div>
+    <% } %>
+  </div>
+</div>
+<% if (resource.quantity === 1 && ['AVAILABLE','DAMAGED'].includes(resource.status)) { %>
+<div class="modal fade" id="dtMaintModal" tabindex="-1"><div class="modal-dialog"><form action="/admin/resources/maintenance" method="POST" class="modal-content">
+  <input type="hidden" name="resource_id" value="<%= resource.id %>"/>
+  <div class="modal-header"><h6 class="modal-title fw-bold">Start maintenance — <%= resource.name %></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="mb-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Type</label>
+      <select name="maintenance_type" class="form-select"><% ['REPAIR','PREVENTIVE','CALIBRATION','UPGRADE','OTHER'].forEach(function(t){ %><option value="<%= t %>"><%= h.label(t) %></option><% }); %></select></div>
+    <div class="mb-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="2" required></textarea></div>
+    <div class="row g-2">
+      <div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Start date</label><input type="date" name="start_date" class="form-control"/></div><div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Vendor / technician</label><input name="vendor" class="form-control"/></div>
+      <div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Expected completion</label><input type="date" name="expected_completion" class="form-control"/></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button class="btn btn-primary fw-semibold">Start maintenance</button></div>
+</form></div></div>
+<% } %>
+<%- include('_bottom') %>

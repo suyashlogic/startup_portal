@@ -1,0 +1,24 @@
+<%- include('_top', { title, heading: 'My Bookings', icon: 'bi-calendar-week', sub: 'Machines and rooms you have booked', active: 'bookings', actions: '' }) %>
+<ul class="nav nav-tabs mb-3" style="font-size:.85rem;">
+  <li class="nav-item"><a class="nav-link <%= view === 'upcoming' ? 'active' : '' %>" href="/student/my-bookings">Upcoming</a></li>
+  <li class="nav-item"><a class="nav-link <%= view === 'past' ? 'active' : '' %>" href="/student/my-bookings?view=past">Past</a></li>
+</ul>
+<div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-0">
+  <% if (!bookings.length) { %><div class="text-center py-5 text-muted" style="font-size:.9rem;"><i class="bi bi-calendar-x d-block mb-2" style="font-size:2rem;color:#d1d5db;"></i>No <%= view %> bookings.
+    <% if (view === 'upcoming') { %><br><a href="/student/resources">Browse bookable resources</a>.<% } %></div>
+  <% } else { %>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th class="ps-4">Resource</th><th>Date</th><th>Time</th><th>Purpose</th><th>Status</th><th class="text-end pe-4">Action</th></tr></thead><tbody>
+    <% bookings.forEach(function(b){ %>
+    <tr><td class="ps-4 fw-semibold" style="font-size:.85rem;"><%= b.resource_name %><div class="text-muted fw-normal" style="font-size:.72rem;"><%= b.asset_code %></div></td>
+      <td style="font-size:.82rem;"><%= h.date(b.booking_date) %></td>
+      <td style="font-size:.82rem;"><%= String(b.start_time).slice(0,5) %> – <%= String(b.end_time).slice(0,5) %></td>
+      <td style="font-size:.8rem;max-width:200px;"><%= b.purpose %><% if (b.admin_remarks) { %><div class="text-danger" style="font-size:.72rem;"><%= b.admin_remarks %></div><% } %></td>
+      <td><%- h.badge(b.status) %></td>
+      <td class="text-end pe-4"><% if (['PENDING','APPROVED'].includes(b.status)) { %>
+        <form action="/student/my-bookings/<%= b.id %>/cancel" method="POST" onsubmit="return confirm('Cancel this booking?');"><button class="btn btn-outline-secondary btn-sm" style="font-size:.75rem;">Cancel</button></form>
+      <% } %></td></tr>
+    <% }); %></tbody></table></div>
+  <% } %>
+</div></div>
+<%- include('_bottom') %>

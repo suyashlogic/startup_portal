@@ -50,6 +50,20 @@ const proposalFilter = (req, file, cb) => {
   }
 };
 
+// Resource-issue photos: tighter than proposalFilter (images + PDF only — no
+// office docs, since these are damage/malfunction photos, not documents).
+const issueAttachmentFilter = (req, file, cb) => {
+  const allowedMimes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  const allowedExts = [".jpg", ".jpeg", ".png", ".webp", ".pdf"];
+  const ext = path.extname(file.originalname).toLowerCase();
+
+  if (allowedMimes.includes(file.mimetype) && allowedExts.includes(ext)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Allowed formats: JPG, PNG, WEBP, PDF"), false);
+  }
+};
+
 export const upload = multer({
   storage,
   fileFilter: pitchDeckFilter,
@@ -60,4 +74,10 @@ export const uploadProposal = multer({
   storage,
   fileFilter: proposalFilter,
   limits: { fileSize: 10 * 1024 * 1024 } // 10MB
+});
+
+export const uploadIssueAttachment = multer({
+  storage,
+  fileFilter: issueAttachmentFilter,
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB — a phone photo, not a proposal deck
 });

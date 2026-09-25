@@ -1,0 +1,75 @@
+<%- include('_top', { title, heading: 'Maintenance', icon: 'bi-tools', sub: 'Repairs, calibration and scheduled upkeep', active: 'maintenance',
+    actions: '<button class="btn btn-white fw-bold" data-bs-toggle="modal" data-bs-target="#newMaintModal"><i class="bi bi-plus-lg me-1"></i> Schedule maintenance</button>' }) %>
+
+<ul class="nav nav-tabs mb-3" style="font-size:.85rem;">
+  <% [['open','In progress / scheduled'],['completed','Completed'],['cancelled','Cancelled'],['all','All']].forEach(function(t){ %>
+    <li class="nav-item"><a class="nav-link <%= view === t[0] ? 'active' : '' %>" href="/admin/resources/maintenance?view=<%= t[0] %>"><%= t[1] %></a></li>
+  <% }); %>
+</ul>
+
+<div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-0">
+  <% if (!maintenance.length) { %><div class="text-center py-5 text-muted" style="font-size:.9rem;"><i class="bi bi-tools d-block mb-2" style="font-size:2rem;color:#d1d5db;"></i>Nothing here.</div>
+  <% } else { %>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th class="ps-4">Resource</th><th>Type</th><th>Vendor</th><th>Started</th><th>Expected</th><th>Cost</th><th>Status</th><th class="text-end pe-4">Action</th></tr></thead><tbody>
+    <% maintenance.forEach(function(m){ %>
+      <tr>
+        <td class="ps-4 fw-semibold" style="font-size:.85rem;"><%= m.resource_name %><div class="text-muted fw-normal" style="font-size:.72rem;"><%= m.asset_code %><% if (m.issue_type) { %> · from <%= h.label(m.issue_type) %> report<% } %></div></td>
+        <td style="font-size:.82rem;"><%= h.label(m.maintenance_type) %></td>
+        <td style="font-size:.82rem;"><%= m.vendor || m.technician || '—' %></td>
+        <td style="font-size:.8rem;"><%= h.date(m.start_date) %></td>
+        <td style="font-size:.8rem;"><%= h.date(m.expected_completion) %></td>
+        <td style="font-size:.85rem;" class="fw-semibold"><%= m.status === 'COMPLETED' ? h.inr(m.cost) : '—' %></td>
+        <td><%- h.badge(m.status) %></td>
+        <td class="text-end pe-4 text-nowrap">
+          <% if (['SCHEDULED','IN_PROGRESS'].includes(m.status)) { %>
+            <button class="btn btn-primary btn-sm fw-semibold" style="font-size:.75rem;" data-bs-toggle="modal" data-bs-target="#completeModal"
+              data-action="/admin/resources/maintenance/<%= m.id %>/complete" data-name="<%= m.resource_name %>">Complete</button>
+            <form action="/admin/resources/maintenance/<%= m.id %>/cancel" method="POST" class="d-inline" onsubmit="return confirm('Cancel this maintenance record? The resource returns to Available.');"><button class="btn btn-outline-secondary btn-sm" style="font-size:.75rem;">Cancel</button></form>
+          <% } %>
+        </td>
+      </tr>
+    <% }); %></tbody></table></div>
+  <% } %>
+</div></div>
+
+<div class="modal fade" id="newMaintModal" tabindex="-1"><div class="modal-dialog"><form action="/admin/resources/maintenance" method="POST" class="modal-content">
+  <div class="modal-header"><h6 class="modal-title fw-bold">Schedule maintenance</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="mb-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Resource <span class="text-danger">*</span></label>
+      <select name="resource_id" class="form-select" required><option value="">Select…</option>
+        <% resources.forEach(function(r){ %><option value="<%= r.id %>"><%= r.name %> (<%= r.asset_code %>)<%= r.quantity > 1 ? ' — stock item, status unaffected' : '' %></option><% }); %></select>
+      <div class="form-text" style="font-size:.72rem;">Only Available or Damaged resources can be scheduled.</div></div>
+    <div class="mb-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Type</label>
+      <select name="maintenance_type" class="form-select"><% ['REPAIR','PREVENTIVE','CALIBRATION','UPGRADE','OTHER'].forEach(function(t){ %><option value="<%= t %>"><%= h.label(t) %></option><% }); %></select></div>
+    <div class="mb-3"><label class="form-label fw-semibold" style="font-size:.85rem;">Description <span class="text-danger">*</span></label><textarea name="description" class="form-control" rows="2" required></textarea></div>
+    <div class="row g-2">
+      <div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Start date</label><input type="date" name="start_date" class="form-control"/></div><div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Vendor / technician</label><input name="vendor" class="form-control"/></div>
+      <div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Expected completion</label><input type="date" name="expected_completion" class="form-control"/></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button class="btn btn-primary fw-semibold">Schedule</button></div>
+</form></div></div>
+
+<div class="modal fade" id="completeModal" tabindex="-1"><div class="modal-dialog"><form method="POST" class="modal-content">
+  <div class="modal-header"><h6 class="modal-title fw-bold">Complete maintenance — <span id="cmName"></span></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="row g-3">
+      <div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Completion date</label><input type="date" name="completion_date" class="form-control"/></div>
+      <div class="col-6"><label class="form-label fw-semibold" style="font-size:.85rem;">Cost (₹)</label><input type="number" min="0" step="0.01" name="cost" class="form-control" value="0"/></div>
+      <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Condition after repair</label>
+        <select name="condition_after" class="form-select"><option value="NEW">New</option><option value="GOOD" selected>Good</option><option value="FAIR">Fair</option></select></div>
+      <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Notes</label><textarea name="notes" class="form-control" rows="2" placeholder="What was done"></textarea></div>
+    </div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button class="btn btn-primary fw-semibold">Mark completed</button></div>
+</form></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('completeModal').addEventListener('show.bs.modal', function (e) {
+  this.querySelector('form').action = e.relatedTarget.getAttribute('data-action');
+  document.getElementById('cmName').textContent = e.relatedTarget.getAttribute('data-name');
+});
+</script>
+</div></main></div></body></html>

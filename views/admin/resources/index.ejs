@@ -1,0 +1,69 @@
+<%- include('_top', { title, heading: 'All Resources', icon: 'bi-collection', sub: 'Search, filter and manage every asset', active: 'all',
+    actions: '<a href="/admin/resources/new" class="btn btn-white fw-bold"><i class="bi bi-plus-lg me-1"></i> Add resource</a>' }) %>
+
+<div class="card border-0 shadow-sm mb-4" style="border-radius:12px;"><div class="card-body py-3 px-4">
+  <form action="/admin/resources" method="GET"><div class="row g-2 align-items-end">
+    <div class="col-12 col-md-3"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Search</label>
+      <input type="text" name="q" class="form-control" value="<%= filters.q %>" placeholder="Code, name, serial, brand, model" style="font-size:.84rem;"/></div>
+    <div class="col-6 col-md-2"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Category</label>
+      <select name="category" class="form-select" style="font-size:.84rem;"><option value="">All</option>
+        <% categories.forEach(function(c){ %><option value="<%= c.id %>" <%= filters.category == c.id ? 'selected' : '' %>><%= c.name %></option><% }); %></select></div>
+    <div class="col-6 col-md-2"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Status</label>
+      <select name="status" class="form-select" style="font-size:.84rem;"><option value="">All</option>
+        <% enums.STATUSES.forEach(function(s){ %><option value="<%= s %>" <%= filters.status === s ? 'selected' : '' %>><%= h.label(s) %></option><% }); %></select></div>
+    <div class="col-6 col-md-2"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Type</label>
+      <select name="type" class="form-select" style="font-size:.84rem;"><option value="">All</option>
+        <% enums.TYPES.forEach(function(s){ %><option value="<%= s %>" <%= filters.type === s ? 'selected' : '' %>><%= h.label(s) %></option><% }); %></select></div>
+    <div class="col-6 col-md-2"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Condition</label>
+      <select name="condition" class="form-select" style="font-size:.84rem;"><option value="">All</option>
+        <% enums.CONDITIONS.forEach(function(s){ %><option value="<%= s %>" <%= filters.condition === s ? 'selected' : '' %>><%= h.label(s) %></option><% }); %></select></div>
+    <div class="col-6 col-md-2"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Location</label>
+      <input type="text" name="location" class="form-control" value="<%= filters.location %>" style="font-size:.84rem;"/></div>
+    <div class="col-6 col-md-2"><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Sort by</label>
+      <select name="sort" class="form-select" style="font-size:.84rem;">
+        <% [['created','Newest'],['name','Name'],['status','Status'],['code','Asset code']].forEach(function(s){ %><option value="<%= s[0] %>" <%= filters.sort === s[0] ? 'selected' : '' %>><%= s[1] %></option><% }); %></select></div>
+    <div class="col-12 col-md-4 d-flex gap-2 align-items-center">
+      <div class="form-check mb-0"><input class="form-check-input" type="checkbox" name="inactive" value="1" id="inact" <%= filters.inactive ? 'checked' : '' %>><label class="form-check-label" for="inact" style="font-size:.8rem;">Show deactivated</label></div>
+      <button type="submit" class="btn btn-primary fw-semibold ms-auto" style="font-size:.84rem;"><i class="bi bi-funnel me-1"></i>Apply</button>
+      <a href="/admin/resources" class="btn btn-outline-secondary" style="font-size:.84rem;">Reset</a></div>
+  </div></form>
+</div></div>
+
+<div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-0">
+  <% if (!rows.length) { %>
+    <div class="text-center py-5 px-4"><i class="bi bi-search" style="font-size:2rem;color:#d1d5db;"></i>
+      <h5 class="fw-bold mt-2">No resources found</h5><p class="text-muted mb-3" style="font-size:.875rem;">Try different filters, or add your first resource.</p>
+      <a href="/admin/resources/new" class="btn btn-primary btn-sm">Add resource</a></div>
+  <% } else { %>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th class="ps-4">Asset ID</th><th>Resource</th><th>Category</th><th>Type</th><th>Location</th><th>Condition</th><th>Status</th><th>Assigned to</th><th class="text-end pe-4">Actions</th></tr></thead>
+    <tbody>
+    <% rows.forEach(function(r){ %>
+      <tr>
+        <td class="ps-4"><code style="color:var(--ip-text);"><%= r.asset_code %></code></td>
+        <td><a href="/admin/resources/<%= r.id %>" class="fw-semibold text-decoration-none" style="font-size:.86rem;"><%= r.name %></a>
+          <% if (r.quantity > 1) { %><span class="text-muted" style="font-size:.75rem;"> ×<%= r.quantity %></span><% } %></td>
+        <td style="font-size:.83rem;"><%= r.category_name %></td>
+        <td style="font-size:.8rem;"><%= h.label(r.resource_type) %></td>
+        <td style="font-size:.82rem;"><%= r.location || '—' %></td>
+        <td><%- h.badge(r.condition) %></td>
+        <td><%- h.badge(r.status) %></td>
+        <td style="font-size:.82rem;"><%= r.assigned_to || '—' %></td>
+        <td class="text-end pe-4 text-nowrap">
+          <a href="/admin/resources/<%= r.id %>" class="btn btn-outline-secondary btn-sm" title="View"><i class="bi bi-eye"></i></a>
+          <a href="/admin/resources/<%= r.id %>/edit" class="btn btn-outline-primary btn-sm" title="Edit"><i class="bi bi-pencil"></i></a>
+        </td>
+      </tr>
+    <% }); %>
+    </tbody></table></div>
+    <% if (pages > 1) { const qs = new URLSearchParams(Object.entries(filters).filter(function(e){ return e[1]; })).toString(); %>
+    <div class="px-4 py-2 d-flex align-items-center justify-content-between" style="border-top:1px solid #e3e7ef;background:#fafbfc;border-radius:0 0 14px 14px;">
+      <span class="text-muted" style="font-size:.78rem;">Page <strong><%= page %></strong> of <%= pages %> · <%= total %> total</span>
+      <div class="d-flex gap-2">
+        <a class="btn btn-outline-secondary btn-sm <%= page <= 1 ? 'disabled' : '' %>" href="/admin/resources?<%= qs %>&page=<%= page - 1 %>">Previous</a>
+        <a class="btn btn-outline-secondary btn-sm <%= page >= pages ? 'disabled' : '' %>" href="/admin/resources?<%= qs %>&page=<%= page + 1 %>">Next</a>
+      </div></div>
+    <% } else { %><div class="px-4 py-2 text-muted" style="font-size:.78rem;border-top:1px solid #e3e7ef;background:#fafbfc;border-radius:0 0 14px 14px;"><strong><%= total %></strong> resource<%= total !== 1 ? 's' : '' %></div><% } %>
+  <% } %>
+</div></div>
+<%- include('_bottom') %>

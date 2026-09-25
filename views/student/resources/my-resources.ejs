@@ -1,0 +1,53 @@
+<%- include('_top', { title, heading: 'My Resources', icon: 'bi-person-check', sub: 'Your requests and issued equipment', active: 'requests', actions: '' }) %>
+
+<div class="card border-0 shadow-sm mb-4" style="border-radius:14px;"><div class="card-body p-4">
+  <div class="card-section-title"><i class="bi bi-box-arrow-in-right me-1"></i>Currently issued</div>
+  <% if (!current.length) { %><p class="text-muted mb-0" style="font-size:.85rem;">Nothing issued to you right now.</p>
+  <% } else { %>
+  <div class="row g-3">
+    <% current.forEach(function(a){ const late = ['ACTIVE','OVERDUE'].includes(a.status) && Number(a.days_overdue) > 0; %>
+    <div class="col-md-6">
+      <div class="p-3 rounded-3 h-100" style="background:#f8f9fa;border:1px solid #e3e7ef;">
+        <div class="d-flex justify-content-between align-items-start"><div><div class="fw-semibold" style="font-size:.9rem;"><%= a.resource_name %></div>
+          <div class="text-muted" style="font-size:.75rem;"><%= a.asset_code %><% if (a.startup_title) { %> · <%= a.startup_title %><% } %></div></div>
+          <%- h.badge(a.status) %></div>
+        <div class="mt-2" style="font-size:.8rem;">Due: <%= h.date(a.expected_return_at) %><% if (late) { %> <span class="badge rs-overdue"><%= a.days_overdue %> day<%= a.days_overdue > 1 ? 's' : '' %> late</span><% } %></div>
+        <% if (a.status === 'ACTIVE' || a.status === 'OVERDUE') { %>
+        <form action="/student/my-resources/<%= a.id %>/return" method="POST" class="mt-2 d-inline" onsubmit="return confirm('Request return of this item?');">
+          <button class="btn btn-outline-primary btn-sm"><i class="bi bi-box-arrow-left me-1"></i>Request return</button></form>
+        <a href="/student/report-issue?resource_id=<%= a.resource_id %>" class="btn btn-outline-secondary btn-sm mt-2 ms-1"><i class="bi bi-flag me-1"></i>Report issue</a>
+        <% } else { %><span class="badge rs-pending mt-2 d-inline-block">Return requested — awaiting inspection</span><% } %>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+  <% } %>
+</div></div>
+
+<div class="card border-0 shadow-sm mb-4" style="border-radius:14px;"><div class="card-body p-0">
+  <div class="card-section-title px-4 pt-4"><i class="bi bi-inbox me-1"></i>My requests</div>
+  <% if (!requests.length) { %><p class="text-muted px-4 pb-4" style="font-size:.85rem;">You haven't requested anything yet. <a href="/student/resources">Browse resources</a>.</p>
+  <% } else { %>
+  <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th class="ps-4">Resource</th><th>Startup</th><th>Needed</th><th>Status</th><th>Admin note</th><th class="text-end pe-4">Action</th></tr></thead><tbody>
+  <% requests.forEach(function(q){ %>
+    <tr><td class="ps-4" style="font-size:.85rem;"><%= q.resource_name %> <span class="text-muted">×<%= q.quantity %></span><div class="text-muted" style="font-size:.72rem;"><%= q.asset_code %></div></td>
+      <td style="font-size:.82rem;"><%= q.startup_title || '—' %></td>
+      <td style="font-size:.8rem;white-space:nowrap;"><%= h.date(q.requested_from) %> → <%= h.date(q.requested_until) %></td>
+      <td><%- h.badge(q.status) %></td>
+      <td style="font-size:.78rem;color:#991b1b;max-width:220px;"><%= q.admin_remarks || '' %></td>
+      <td class="text-end pe-4"><% if (q.status === 'PENDING') { %>
+        <form action="/student/my-resources/requests/<%= q.id %>/cancel" method="POST" onsubmit="return confirm('Withdraw this request?');"><button class="btn btn-outline-secondary btn-sm" style="font-size:.75rem;">Withdraw</button></form>
+      <% } %></td></tr>
+  <% }); %></tbody></table></div>
+  <% } %>
+</div></div>
+
+<% if (history.length) { %>
+<div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-4">
+  <div class="card-section-title"><i class="bi bi-clock-history me-1"></i>Past equipment</div>
+  <table class="table table-sm mb-0" style="font-size:.83rem;"><thead><tr><th>Resource</th><th>Issued</th><th>Returned</th><th>Condition returned</th></tr></thead><tbody>
+  <% history.forEach(function(a){ %><tr><td><%= a.resource_name %></td><td><%= h.date(a.issued_at) %></td><td><%= h.date(a.returned_at) %></td><td><%- h.badge(a.return_condition) %></td></tr><% }); %>
+  </tbody></table>
+</div></div>
+<% } %>
+<%- include('_bottom') %>

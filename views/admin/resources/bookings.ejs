@@ -1,0 +1,44 @@
+<%- include('_top', { title, heading: 'Resource Bookings', icon: 'bi-calendar3', sub: 'Approve or reject student booking requests', active: 'bookings', actions: '' }) %>
+
+<ul class="nav nav-tabs mb-3" style="font-size:.85rem;">
+  <% ['PENDING','APPROVED','COMPLETED','REJECTED','CANCELLED'].forEach(function(s){ %>
+    <li class="nav-item"><a class="nav-link <%= status === s ? 'active' : '' %>" href="/admin/resources/bookings?status=<%= s %>"><%= h.label(s) %> <span class="badge bg-light text-dark"><%= counts[s] || 0 %></span></a></li>
+  <% }); %>
+</ul>
+
+<div class="card border-0 shadow-sm" style="border-radius:14px;"><div class="card-body p-0">
+  <% if (!bookings.length) { %><div class="text-center py-5 text-muted" style="font-size:.9rem;"><i class="bi bi-calendar-x d-block mb-2" style="font-size:2rem;color:#d1d5db;"></i>No <%= status.toLowerCase() %> bookings.</div>
+  <% } else { %>
+  <div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th class="ps-4">Student</th><th>Startup</th><th>Resource</th><th>Date</th><th>Time</th><th>Purpose</th><th>Status</th><th class="text-end pe-4">Actions</th></tr></thead><tbody>
+    <% bookings.forEach(function(b){ %>
+      <tr>
+        <td class="ps-4" style="font-size:.85rem;"><%= b.student_name %></td>
+        <td style="font-size:.82rem;"><%= b.startup_title || '—' %></td>
+        <td class="fw-semibold" style="font-size:.85rem;"><%= b.resource_name %><div class="text-muted fw-normal" style="font-size:.72rem;"><%= b.asset_code %></div></td>
+        <td style="font-size:.82rem;"><%= h.date(b.booking_date) %></td>
+        <td style="font-size:.82rem;"><%= String(b.start_time).slice(0,5) %> – <%= String(b.end_time).slice(0,5) %></td>
+        <td style="font-size:.8rem;max-width:200px;"><%= b.purpose %></td>
+        <td><%- h.badge(b.status) %></td>
+        <td class="text-end pe-4 text-nowrap">
+          <% if (b.status === 'PENDING') { %>
+            <form action="/admin/resources/bookings/<%= b.id %>/approve" method="POST" class="d-inline" onsubmit="return confirm('Approve this booking?');"><button class="btn btn-sm fw-semibold" style="background:#1a7a4a;color:#fff;font-size:.75rem;">Approve</button></form>
+            <button class="btn btn-danger btn-sm fw-semibold" style="font-size:.75rem;" data-bs-toggle="modal" data-bs-target="#rejectBModal" data-action="/admin/resources/bookings/<%= b.id %>/reject">Reject</button>
+          <% } %>
+        </td>
+      </tr>
+    <% }); %></tbody></table></div>
+  <% } %>
+</div></div>
+
+<div class="modal fade" id="rejectBModal" tabindex="-1"><div class="modal-dialog"><form method="POST" class="modal-content">
+  <div class="modal-header"><h6 class="modal-title fw-bold">Reject booking</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><label class="form-label fw-semibold" style="font-size:.85rem;">Reason <span class="text-danger">*</span></label>
+    <textarea name="admin_remarks" class="form-control" rows="3" required placeholder="e.g. Slot needed for scheduled maintenance."></textarea></div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button class="btn btn-danger fw-semibold">Reject booking</button></div>
+</form></div></div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.getElementById('rejectBModal').addEventListener('show.bs.modal', function (e) { this.querySelector('form').action = e.relatedTarget.getAttribute('data-action'); });
+</script>
+</div></main></div></body></html>

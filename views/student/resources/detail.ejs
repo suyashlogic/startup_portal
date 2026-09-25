@@ -1,0 +1,82 @@
+<% const bookable = ['BOOKABLE','FACILITY'].includes(resource.resource_type); %>
+<%- include('_top', { title, heading: resource.name, icon: 'bi-box-seam', sub: resource.category_name + ' · ' + resource.asset_code, active: 'browse',
+    actions: '<a href="/student/resources" class="btn"><i class="bi bi-arrow-left me-1"></i> Back</a>' }) %>
+
+<% if (formError) { %><div class="alert alert-danger border-0" style="font-size:.875rem;"><i class="bi bi-exclamation-triangle-fill me-2"></i><%= formError %></div><% } %>
+
+<div class="row g-4 align-items-start">
+  <div class="col-lg-5">
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-info-circle me-1"></i>Details</div>
+      <div class="d-flex align-items-center gap-2 mb-3"><%- h.badge(resource.status) %> <%- h.badge(resource.condition) %></div>
+      <table class="table table-sm mb-3" style="font-size:.85rem;"><tbody>
+        <tr><td class="text-muted" style="width:42%;">Location</td><td class="fw-semibold"><%= resource.location || '—' %></td></tr>
+        <tr><td class="text-muted">Brand / Model</td><td class="fw-semibold"><%= [resource.brand, resource.model].filter(Boolean).join(' ') || '—' %></td></tr>
+        <% if (!bookable) { %><tr><td class="text-muted">Available now</td><td class="fw-semibold"><%= resource.available_qty %> of <%= resource.quantity %> <%= resource.unit %></td></tr><% } %>
+      </tbody></table>
+      <% if (resource.description) { %><p style="font-size:.85rem;color:#374151;"><%= resource.description %></p><% } %>
+      <a href="/student/report-issue?resource_id=<%= resource.id %>" class="btn btn-outline-secondary btn-sm"><i class="bi bi-flag me-1"></i>Report a problem with this item</a>
+    </div></div>
+  </div>
+
+  <div class="col-lg-7">
+    <% if (!bookable) { %>
+    <div class="card border-0 shadow-sm" style="border-radius:14px;border-top:3px solid var(--ip-red) !important;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-hand-index-thumb me-1"></i>Request this resource</div>
+      <% if (resource.status === 'RETIRED') { %>
+        <div class="alert alert-secondary border-0" style="font-size:.85rem;">This resource has been retired and can no longer be requested.</div>
+      <% } else if (resource.available_qty < 1) { %>
+        <div class="alert alert-warning border-0" style="font-size:.85rem;background:#fef9ec;">All units are currently issued. Check back later.</div>
+      <% } else { %>
+      <form action="/student/resources/<%= resource.id %>/request" method="POST">
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Quantity</label>
+            <input type="number" name="quantity" min="1" max="<%= resource.available_qty %>" value="1" class="form-control" required/></div>
+          <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Required from <span class="text-danger">*</span></label>
+            <input type="date" name="requested_from" class="form-control" required/></div>
+          <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Expected return <span class="text-danger">*</span></label>
+            <input type="date" name="requested_until" class="form-control" required/></div>
+          <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Purpose <span class="text-danger">*</span></label>
+            <textarea name="purpose" class="form-control" rows="3" required placeholder="e.g. IoT prototype for smart irrigation"></textarea></div>
+          <% if (startups.length) { %><div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Startup <span class="text-muted fw-normal">(optional)</span></label>
+            <select name="startup_id" class="form-select"><option value="">— None —</option><% startups.forEach(function(s){ %><option value="<%= s.id %>"><%= s.title %></option><% }); %></select></div><% } %>
+          <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Remarks</label><textarea name="remarks" class="form-control" rows="2"></textarea></div>
+        </div>
+        <button class="btn btn-primary fw-bold px-4 mt-4"><i class="bi bi-send me-2"></i>Submit request</button>
+      </form>
+      <% } %>
+    </div></div>
+    <% } else { %>
+    <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-calendar3 me-1"></i>Today's availability</div>
+      <form method="GET" class="d-flex align-items-end gap-2 mb-3">
+        <div><label class="form-label fw-semibold mb-1" style="font-size:.78rem;">Date</label><input type="date" name="date" value="<%= availability.date %>" class="form-control form-control-sm" onchange="this.form.submit()"/></div>
+      </form>
+      <% if (!availability.slots.length) { %><p class="text-muted mb-0" style="font-size:.85rem;">No approved bookings yet — the whole day is open.</p>
+      <% } else { %><table class="table table-sm mb-0" style="font-size:.84rem;"><thead><tr><th>Start</th><th>End</th><th>Booked by</th></tr></thead><tbody>
+        <% availability.slots.forEach(function(s){ %><tr><td><%= h.time(s.start_time) %></td><td><%= h.time(s.end_time) %></td><td><%= s.booked_by %></td></tr><% }); %>
+      </tbody></table><% } %>
+    </div></div>
+
+    <div class="card border-0 shadow-sm" style="border-radius:14px;border-top:3px solid var(--ip-red) !important;"><div class="card-body p-4">
+      <div class="card-section-title"><i class="bi bi-calendar-plus me-1"></i>Book this resource</div>
+      <% if (resource.status !== 'AVAILABLE') { %><div class="alert alert-secondary border-0" style="font-size:.85rem;">This resource is <%= h.label(resource.status).toLowerCase() %> and cannot be booked right now.</div>
+      <% } else { %>
+      <form action="/student/resources/<%= resource.id %>/book" method="POST">
+        <div class="row g-3">
+          <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Date <span class="text-danger">*</span></label><input type="date" name="booking_date" class="form-control" required/></div>
+          <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">Start time <span class="text-danger">*</span></label><input type="time" name="start_time" class="form-control" required/></div>
+          <div class="col-md-4"><label class="form-label fw-semibold" style="font-size:.85rem;">End time <span class="text-danger">*</span></label><input type="time" name="end_time" class="form-control" required/></div>
+          <div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Purpose <span class="text-danger">*</span></label><textarea name="purpose" class="form-control" rows="2" required placeholder="e.g. Print prototype enclosure"></textarea></div>
+          <% if (startups.length) { %><div class="col-12"><label class="form-label fw-semibold" style="font-size:.85rem;">Startup <span class="text-muted fw-normal">(optional)</span></label>
+            <select name="startup_id" class="form-select"><option value="">— None —</option><% startups.forEach(function(s){ %><option value="<%= s.id %>"><%= s.title %></option><% }); %></select></div><% } %>
+        </div>
+        <div class="form-text mt-2" style="font-size:.78rem;">Overlapping approved bookings are never allowed — you'll see an error if the slot is taken.</div>
+        <button class="btn btn-primary fw-bold px-4 mt-2"><i class="bi bi-calendar-check me-2"></i>Request booking</button>
+      </form>
+      <% } %>
+    </div></div>
+    <% } %>
+  </div>
+</div>
+<%- include('_bottom') %>

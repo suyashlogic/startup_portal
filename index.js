@@ -15,6 +15,9 @@ import mentorRoutes        from './routes/mentor.js';
 import marketingRoutes     from './routes/marketing.js';
 import notificationRoutes  from './routes/notifications.js';                   // NEW
 import { drain }           from './service/notificationService.js';            // NEW
+import adminResourceRoutes from './routes/adminResources.js';
+import studentResourceRoutes from './routes/studentResources.js';
+import mentorResourceRoutes from './routes/mentorResources.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -49,8 +52,11 @@ app.use(setNotificationLocals);                                                /
 
 app.use('/',              marketingRoutes);
 app.use('/auth',          authRoutes);
-app.use('/student',       studentRoutes);
-app.use('/admin',         adminRoutes);
+app.use('/student', studentResourceRoutes);
+app.use('/student', studentRoutes);
+app.use('/admin/resources', adminResourceRoutes);   // must come BEFORE app.use('/admin', adminRoutes)
+app.use('/admin',           adminRoutes)
+app.use('/mentor/resources', mentorResourceRoutes);
 app.use('/mentor',        mentorRoutes);
 app.use('/notifications', notificationRoutes);                                 // NEW
 

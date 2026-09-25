@@ -1,0 +1,14 @@
+/* Resource module: status badges + small helpers. Loaded only by resource pages. */
+.rs-available{background:#d1fae5!important;color:#065f46!important}
+.rs-approved,.rs-completed,.rs-returned,.rs-resolved,.rs-closed,.rs-new,.rs-good{background:#d1fae5!important;color:#065f46!important}
+.rs-issued,.rs-in_use,.rs-active,.rs-in_progress,.rs-under_inspection{background:#eff6ff!important;color:#1d4ed8!important}
+.rs-reserved,.rs-scheduled,.rs-return_requested,.rs-fair{background:rgba(241,171,39,.18)!important;color:#8A5A0B!important}
+.rs-pending,.rs-open{background:#FCEFD6!important;color:#8A5A0B!important}
+.rs-maintenance,.rs-in_repair,.rs-minor_damage{background:#f5f3ff!important;color:#6d28d9!important}
+.rs-damaged,.rs-rejected,.rs-overdue,.rs-lost,.rs-major_damage,.rs-unusable{background:#fee2e2!important;color:#991b1b!important}
+.rs-retired,.rs-unavailable,.rs-cancelled,.rs-no_show{background:#f1f5f9!important;color:#475569!important}
+.rs-tabs .nav-link{font-size:.85rem;color:#4b5563}
+.rs-tabs .nav-link.active{color:#fff}
+.rs-timeline{border-left:2px solid #e3e7ef;margin-left:.4rem;padding-left:1.1rem}
+.rs-timeline .ev{position:relative;padding-bottom:1rem}
+.rs-timeline .ev::before{content:'';position:absolute;left:-1.55rem;top:.35rem;width:10px;height:10px;border-radius:50%;background:var(--ip-red);border:2px solid #fff;box-shadow:0 0 0 2px var(--ip-red)}
