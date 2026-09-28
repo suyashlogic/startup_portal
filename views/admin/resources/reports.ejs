@@ -1,0 +1,71 @@
+<%- include('_top', { title, heading: 'Reports', icon: 'bi-bar-chart', sub: 'Inventory, usage and maintenance, exportable as CSV', active: 'reports', actions: '' }) %>
+
+<div class="row g-4">
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="card-section-title mb-0"><i class="bi bi-boxes me-1"></i>Inventory</div>
+        <a href="/admin/resources/reports/inventory.csv" class="btn btn-outline-primary btn-sm"><i class="bi bi-download me-1"></i>CSV</a>
+      </div>
+      <div class="mb-2" style="font-size:.85rem;"><strong><%= inventory.summary.total %></strong> active resources</div>
+      <div class="row g-2">
+        <div class="col-6"><div class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">By category</div>
+          <% Object.entries(inventory.summary.byCategory).forEach(function(e){ %><div class="d-flex justify-content-between" style="font-size:.8rem;"><span><%= e[0] %></span><strong><%= e[1] %></strong></div><% }); %></div>
+        <div class="col-6"><div class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">By status</div>
+          <% Object.entries(inventory.summary.byStatus).forEach(function(e){ %><div class="d-flex justify-content-between" style="font-size:.8rem;"><span><%= h.label(e[0]) %></span><strong><%= e[1] %></strong></div><% }); %></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="card-section-title mb-0"><i class="bi bi-person-check me-1"></i>Assignments</div>
+        <a href="/admin/resources/reports/assignments.csv" class="btn btn-outline-primary btn-sm"><i class="bi bi-download me-1"></i>CSV</a>
+      </div>
+      <div class="row g-2 mb-2" style="font-size:.85rem;">
+        <div class="col-4"><strong><%= assignments.summary.total %></strong><div class="text-muted" style="font-size:.7rem;">Total ever</div></div>
+        <div class="col-4"><strong class="text-warning"><%= assignments.summary.active %></strong><div class="text-muted" style="font-size:.7rem;">Currently out</div></div>
+        <div class="col-4"><strong class="text-danger"><%= assignments.summary.overdue %></strong><div class="text-muted" style="font-size:.7rem;">Overdue</div></div>
+      </div>
+      <div class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Most active students</div>
+      <% assignments.summary.mostActive.forEach(function(e){ %><div class="d-flex justify-content-between" style="font-size:.8rem;"><span><%= e[0] %></span><strong><%= e[1] %></strong></div><% }); %>
+      <% if (!assignments.summary.mostActive.length) { %><p class="text-muted mb-0" style="font-size:.8rem;">No assignments yet.</p><% } %>
+    </div></div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="card-section-title mb-0"><i class="bi bi-calendar3 me-1"></i>Bookings</div>
+        <a href="/admin/resources/reports/bookings.csv" class="btn btn-outline-primary btn-sm"><i class="bi bi-download me-1"></i>CSV</a>
+      </div>
+      <div class="mb-2" style="font-size:.85rem;"><strong><%= bookings.summary.total %></strong> total bookings</div>
+      <div class="row g-2">
+        <div class="col-6"><div class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">By status</div>
+          <% Object.entries(bookings.summary.byStatus).forEach(function(e){ %><div class="d-flex justify-content-between" style="font-size:.8rem;"><span><%= h.label(e[0]) %></span><strong><%= e[1] %></strong></div><% }); %></div>
+        <div class="col-6"><div class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Most booked</div>
+          <% bookings.summary.mostBooked.forEach(function(e){ %><div class="d-flex justify-content-between" style="font-size:.8rem;"><span><%= e[0] %></span><strong><%= e[1] %></strong></div><% }); %></div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100" style="border-radius:14px;"><div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <div class="card-section-title mb-0"><i class="bi bi-tools me-1"></i>Maintenance</div>
+        <a href="/admin/resources/reports/maintenance.csv" class="btn btn-outline-primary btn-sm"><i class="bi bi-download me-1"></i>CSV</a>
+      </div>
+      <div class="row g-2 mb-2" style="font-size:.85rem;">
+        <div class="col-6"><strong><%= maintenance.summary.completed %></strong> / <%= maintenance.summary.total %><div class="text-muted" style="font-size:.7rem;">Completed / total</div></div>
+        <div class="col-6"><strong><%= h.inr(maintenance.summary.totalCost) %></strong><div class="text-muted" style="font-size:.7rem;">Total cost (completed)</div></div>
+      </div>
+      <div class="text-muted" style="font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700;">Most expensive to maintain</div>
+      <% maintenance.summary.mostExpensive.forEach(function(e){ %><div class="d-flex justify-content-between" style="font-size:.8rem;"><span><%= e[0] %></span><strong><%= h.inr(e[1]) %></strong></div><% }); %>
+      <% if (!maintenance.summary.mostExpensive.length) { %><p class="text-muted mb-0" style="font-size:.8rem;">No completed maintenance yet.</p><% } %>
+    </div></div>
+  </div>
+
+</div>
+<%- include('_bottom') %>

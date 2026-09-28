@@ -1,0 +1,6 @@
+<% if (clean) { %>
+<p>Your return of <strong><%= resourceName %></strong> has been recorded. Thanks for bringing it back in good condition.</p>
+<% } else { %>
+<p>Your return of <strong><%= resourceName %></strong> has been recorded and logged as <strong><%= String(condition).toLowerCase().replace(/_/g,' ') %></strong>.</p>
+<p>The incubation cell may follow up if the item needs repair. Thank you for reporting its condition honestly.</p>
+<% } %>

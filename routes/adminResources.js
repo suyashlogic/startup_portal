@@ -11,6 +11,8 @@ import * as S from '../service/resourceService.js';
 import * as Q from '../service/resourceQueries.js';
 import { uploadIssueAttachment } from '../middleware/upload.js';
 import fs from 'fs/promises';
+import notificationService from '../service/notificationService.js';
+import { toCSV } from '../service/csvUtil.js';
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -44,7 +46,7 @@ const idOk = (v) => /^\d+$/.test(String(v));
 /* ── Overview ─────────────────────────────────────────────────────────── */
 router.get('/overview', async (req, res) => {
   try {
-    await S.markOverdue();
+    await notificationService.resourceOverdueCheck();
     const days = parseInt(process.env.RESOURCE_WARRANTY_ALERT_DAYS, 10) || 30;
     res.render('admin/resources/overview', { title: 'Resource Management', o: await Q.overview(days), warrantyDays: days });
   } catch (err) { console.error(err); req.flash('error', 'Could not load resource overview.'); res.redirect('/admin/dashboard'); }
@@ -98,12 +100,14 @@ const REQ = '/admin/resources/requests';
 router.post('/requests/:id(\\d+)/approve', async (req, res) => {
   try { await S.approveRequest(req.user, req.params.id, req.body.admin_remarks);
         await audit(req, 'RESOURCE_REQUEST_APPROVED', 'resource_request', +req.params.id);
+        await notificationService.resourceRequestApproved(+req.params.id);
         req.flash('success', 'Request approved. You can now issue the resource.'); res.redirect(`${REQ}?status=APPROVED`); }
   catch (e) { fail(req, res, e, REQ); }
 });
 router.post('/requests/:id(\\d+)/reject', async (req, res) => {
   try { await S.rejectRequest(req.user, req.params.id, req.body.admin_remarks);
         await audit(req, 'RESOURCE_REQUEST_REJECTED', 'resource_request', +req.params.id);
+        await notificationService.resourceRequestRejected(+req.params.id);
         req.flash('success', 'Request rejected.'); res.redirect(REQ); }
   catch (e) { fail(req, res, e, REQ); }
 });
@@ -116,6 +120,7 @@ router.post('/requests/:id(\\d+)/cancel', async (req, res) => {
 router.post('/requests/:id(\\d+)/issue', async (req, res) => {
   try { const aid = await S.issueResource(req.user, req.params.id, req.body);
         await audit(req, 'RESOURCE_ISSUED', 'resource_assignment', aid, { details: { requestId: +req.params.id } });
+        await notificationService.resourceIssued(aid);
         req.flash('success', 'Resource issued.'); res.redirect('/admin/resources/assignments'); }
   catch (e) { fail(req, res, e, `${REQ}?status=APPROVED`); }
 });
@@ -123,7 +128,7 @@ router.post('/requests/:id(\\d+)/issue', async (req, res) => {
 /* ── Assignments / returns ────────────────────────────────────────────── */
 router.get('/assignments', async (req, res) => {
   try {
-    await S.markOverdue();
+    await notificationService.resourceOverdueCheck();
     const view = ['open', 'overdue', 'returned', 'all'].includes(req.query.view) ? req.query.view : 'open';
     res.render('admin/resources/assignments', { title: 'Resource Assignments', assignments: await Q.listAssignments(view), view });
   } catch (err) { console.error(err); req.flash('error', 'Could not load assignments.'); res.redirect('/admin/resources/overview'); }
@@ -132,6 +137,7 @@ router.post('/assignments/:id(\\d+)/return', async (req, res) => {
   try {
     const out = await S.completeReturn(req.user, req.params.id, req.body);
     await audit(req, 'RESOURCE_RETURNED', 'resource_assignment', +req.params.id, { details: { condition: req.body.return_condition } });
+    await notificationService.resourceReturned(+req.params.id);
     req.flash('success', out.needsMaintenance ? 'Return recorded. The item is marked damaged and needs maintenance.' : 'Return completed.');
     res.redirect('/admin/resources/assignments');
   } catch (e) { fail(req, res, e, '/admin/resources/assignments'); }
@@ -150,12 +156,14 @@ const BK = '/admin/resources/bookings';
 router.post('/bookings/:id(\\d+)/approve', async (req, res) => {
   try { await S.approveBooking(req.user, req.params.id);
         await audit(req, 'RESOURCE_BOOKING_APPROVED', 'resource_booking', +req.params.id);
+        await notificationService.resourceBookingApproved(+req.params.id);
         req.flash('success', 'Booking approved.'); res.redirect(`${BK}?status=APPROVED`); }
   catch (e) { fail(req, res, e, BK); }
 });
 router.post('/bookings/:id(\\d+)/reject', async (req, res) => {
   try { await S.rejectBooking(req.user, req.params.id, req.body.admin_remarks);
         await audit(req, 'RESOURCE_BOOKING_REJECTED', 'resource_booking', +req.params.id);
+        await notificationService.resourceBookingRejected(+req.params.id);
         req.flash('success', 'Booking rejected.'); res.redirect(BK); }
   catch (e) { fail(req, res, e, BK); }
 });
@@ -187,6 +195,7 @@ router.post('/issues/:id(\\d+)/start-maintenance', async (req, res) => {
     const resourceId = req.body.resource_id;
     const mid = await S.startMaintenance(req.user, resourceId, { ...req.body, issue_id: req.params.id });
     await audit(req, 'RESOURCE_MAINTENANCE_STARTED', 'resource_maintenance', mid, { details: { issueId: +req.params.id } });
+    await notificationService.resourceMaintenanceStarted(mid);
     req.flash('success', 'Maintenance started for this issue.');
     res.redirect('/admin/resources/maintenance');
   } catch (e) { fail(req, res, e, ISS); }
@@ -216,6 +225,7 @@ router.post('/maintenance/:id(\\d+)/complete', async (req, res) => {
   try {
     const out = await S.completeMaintenance(req.user, req.params.id, req.body);
     await audit(req, 'RESOURCE_MAINTENANCE_COMPLETED', 'resource_maintenance', +req.params.id, { details: { cost: req.body.cost } });
+    await notificationService.resourceMaintenanceCompleted(+req.params.id);
     req.flash('success', 'Maintenance completed. Resource is available again.');
     res.redirect(MNT);
   } catch (e) { fail(req, res, e, MNT); }
@@ -225,6 +235,57 @@ router.post('/maintenance/:id(\\d+)/cancel', async (req, res) => {
         await audit(req, 'RESOURCE_MAINTENANCE_CANCELLED', 'resource_maintenance', +req.params.id);
         req.flash('success', 'Maintenance cancelled.'); res.redirect(MNT); }
   catch (e) { fail(req, res, e, MNT); }
+});
+
+/* ── Reports ──────────────────────────────────────────────────────────── */
+router.get('/reports', async (req, res) => {
+  try {
+    const [inventory, assignments, bookings, maintenance] = await Promise.all([
+      Q.reportInventory(), Q.reportAssignments(), Q.reportBookings(), Q.reportMaintenance()
+    ]);
+    res.render('admin/resources/reports', { title: 'Reports', inventory, assignments, bookings, maintenance });
+  } catch (err) { console.error(err); req.flash('error', 'Could not load reports.'); res.redirect('/admin/resources/overview'); }
+});
+
+function sendCSV(res, filename, columns, rows) {
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.send(toCSV(columns, rows));
+}
+
+router.get('/reports/inventory.csv', async (req, res) => {
+  const { rows } = await Q.reportInventory();
+  sendCSV(res, 'inventory.csv', [
+    ['Asset Code', 'asset_code'], ['Name', 'name'], ['Category', 'category'], ['Type', 'resource_type'],
+    ['Location', 'location'], ['Status', 'status'], ['Condition', 'condition'], ['Quantity', 'quantity'],
+    ['Unit', 'unit'], ['Purchase Cost', 'purchase_cost'], ['Warranty Expiry', 'warranty_expiry'], ['Added', 'created_at'],
+  ], rows);
+});
+
+router.get('/reports/assignments.csv', async (req, res) => {
+  const { rows } = await Q.reportAssignments();
+  sendCSV(res, 'assignments.csv', [
+    ['Asset Code', 'asset_code'], ['Resource', 'resource_name'], ['Student', 'student_name'], ['Startup', 'startup_title'],
+    ['Quantity', 'quantity'], ['Issued', 'issued_at'], ['Due', 'expected_return_at'], ['Returned', 'returned_at'],
+    ['Status', 'status'], ['Condition at Issue', 'issue_condition'], ['Condition on Return', 'return_condition'],
+  ], rows);
+});
+
+router.get('/reports/bookings.csv', async (req, res) => {
+  const { rows } = await Q.reportBookings();
+  sendCSV(res, 'bookings.csv', [
+    ['Asset Code', 'asset_code'], ['Resource', 'resource_name'], ['Student', 'student_name'], ['Startup', 'startup_title'],
+    ['Date', 'booking_date'], ['Start', 'start_time'], ['End', 'end_time'], ['Status', 'status'], ['Purpose', 'purpose'],
+  ], rows);
+});
+
+router.get('/reports/maintenance.csv', async (req, res) => {
+  const { rows } = await Q.reportMaintenance();
+  sendCSV(res, 'maintenance.csv', [
+    ['Asset Code', 'asset_code'], ['Resource', 'resource_name'], ['Type', 'maintenance_type'], ['From Issue', 'issue_type'],
+    ['Vendor/Technician', (r) => r.vendor || r.technician || ''], ['Started', 'start_date'], ['Completed', 'completion_date'],
+    ['Cost', 'cost'], ['Status', 'status'],
+  ], rows);
 });
 
 /* ── Resource CRUD ────────────────────────────────────────────────────── */
@@ -260,6 +321,12 @@ router.get('/:id(\\d+)', async (req, res) => {
     const [extras, history] = await Promise.all([Q.resourceDetailExtras(resource.id), S.getHistory(resource.id)]);
     res.render('admin/resources/detail', { title: resource.name, resource, history, ...extras });
   } catch (err) { console.error(err); req.flash('error', 'Could not load resource.'); res.redirect('/admin/resources'); }
+});
+
+router.get('/:id(\\d+)/label', async (req, res) => {
+  const resource = await Q.getResource(req.params.id);
+  if (!resource) { req.flash('error', 'Resource not found.'); return res.redirect('/admin/resources'); }
+  res.render('admin/resources/label', { title: `Label — ${resource.asset_code}`, resource, publicUrl: `${req.protocol}://${req.get('host')}/incu/resources/${resource.asset_code}` });
 });
 
 router.get('/:id(\\d+)/edit', async (req, res) => {

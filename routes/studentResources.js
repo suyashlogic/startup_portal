@@ -7,6 +7,7 @@ import express from 'express';
 import { requireStudent } from '../middleware/authMiddleware.js';
 import * as S from '../service/resourceService.js';
 import * as Q from '../service/resourceQueries.js';
+import notificationService from '../service/notificationService.js';
 import { uploadIssueAttachment } from '../middleware/upload.js';
 import fs from 'fs/promises';
 const discardUpload = (req) => (req.file ? fs.unlink(req.file.path).catch(() => {}) : Promise.resolve());
@@ -57,7 +58,8 @@ router.get('/resources/:id(\\d+)/availability', async (req, res) => {   // small
 
 router.post('/resources/:id(\\d+)/request', async (req, res) => {
   try {
-    await S.requestResource(req.user, req.params.id, req.body);
+    const requestId = await S.requestResource(req.user, req.params.id, req.body);
+    await notificationService.resourceRequestSubmitted(requestId);
     req.flash('success', 'Request submitted. You will be notified once it is reviewed.');
     res.redirect('/student/my-resources');
   } catch (e) { fail(req, res, e, `/student/resources/${req.params.id}`); }
@@ -65,7 +67,8 @@ router.post('/resources/:id(\\d+)/request', async (req, res) => {
 
 router.post('/resources/:id(\\d+)/book', async (req, res) => {
   try {
-    await S.createBooking(req.user, req.params.id, req.body);
+    const bookingId = await S.createBooking(req.user, req.params.id, req.body);
+    await notificationService.resourceBookingSubmitted(bookingId);
     req.flash('success', 'Booking submitted. You will be notified once it is reviewed.');
     res.redirect('/student/my-bookings');
   } catch (e) { fail(req, res, e, `/student/resources/${req.params.id}`); }
@@ -89,7 +92,8 @@ router.post('/resources/:id(\\d+)/report-issue', (req, res, next) => {
 }, async (req, res) => {
   try {
     const attachment = req.file ? '/uploads/' + req.file.filename : null;
-    await S.reportIssue(req.user, req.params.id, { ...req.body, attachment });
+    const issueId = await S.reportIssue(req.user, req.params.id, { ...req.body, attachment });
+    await notificationService.resourceIssueReported(issueId);
     req.flash('success', 'Thanks — the incubation cell has been notified.');
     res.redirect('/student/my-resources');
   } catch (e) {

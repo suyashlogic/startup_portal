@@ -6,7 +6,8 @@ import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
 import { setLocals } from './middleware/authMiddleware.js';
-import { setNotificationLocals } from './middleware/notificationLocals.js';   // NEW
+import { setNotificationLocals } from './middleware/notificationLocals.js';   
+import { startResourceReminders, stopResourceReminders } from './service/resourceReminderScheduler.js';
 import passport from 'passport';
 import authRoutes          from './routes/auth.js';
 import studentRoutes       from './routes/student.js';
@@ -18,6 +19,8 @@ import { drain }           from './service/notificationService.js';            /
 import adminResourceRoutes from './routes/adminResources.js';
 import studentResourceRoutes from './routes/studentResources.js';
 import mentorResourceRoutes from './routes/mentorResources.js';
+import publicResourceRoutes from './routes/publicResources.js';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -58,7 +61,8 @@ app.use('/admin/resources', adminResourceRoutes);   // must come BEFORE app.use(
 app.use('/admin',           adminRoutes)
 app.use('/mentor/resources', mentorResourceRoutes);
 app.use('/mentor',        mentorRoutes);
-app.use('/notifications', notificationRoutes);                                 // NEW
+app.use('/notifications', notificationRoutes); 
+app.use('/incu/resources', publicResourceRoutes);                                 
 
 app.use((req, res) => {
   res.status(404).render('error', {
@@ -81,10 +85,15 @@ const server = app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
 
+// Kicks off the resource-return/booking reminder job (see resourceReminderScheduler.js
+// for why this is a plain setInterval and not a queue). Idempotent, so a restart is safe.
+startResourceReminders();
+
 // Let queued emails finish before the process exits (Ctrl+C / deploy restarts).
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
     server.close();
+    stopResourceReminders();
     await drain();
     process.exit(0);
   });

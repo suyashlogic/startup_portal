@@ -230,3 +230,74 @@ export async function getResourceBasic(id) {
   const r = await db.query(`SELECT id, name, asset_code, status, quantity, resource_type FROM resources WHERE id = $1 AND is_active`, [id]);
   return r.rows[0] || null;
 }
+
+/** Public/QR-safe lookup by asset code: only fields fit for an unauthenticated visitor. */
+export async function getResourceByCode(code) {
+  const r = await db.query(
+    `SELECT r.asset_code, r.name, r.resource_type, r.location, r.status, r.condition, r.description, c.name AS category_name
+     FROM resources r JOIN resource_categories c ON c.id = r.category_id
+     WHERE r.asset_code = $1 AND r.is_active`, [code]);
+  return r.rows[0] || null;
+}
+
+/* ═══════════════════════════ REPORTS ═══════════════════════════════════════
+ * Each report returns { summary, rows } — `summary` feeds the on-screen cards,
+ * `rows` is the flat data CSV export uses. Same query, two views of it. */
+
+export async function reportInventory() {
+  const rows = (await db.query(
+    `SELECT r.asset_code, r.name, c.name AS category, r.resource_type, r.location, r.status, r.condition,
+            r.quantity, r.unit, r.purchase_cost, r.warranty_expiry, r.created_at
+     FROM resources r JOIN resource_categories c ON c.id = r.category_id
+     WHERE r.is_active ORDER BY c.name, r.name`)).rows;
+  const byCategory = {}, byLocation = {}, byStatus = {};
+  for (const r of rows) {
+    byCategory[r.category] = (byCategory[r.category] || 0) + 1;
+    const loc = r.location || 'Unspecified';
+    byLocation[loc] = (byLocation[loc] || 0) + 1;
+    byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+  }
+  return { summary: { total: rows.length, byCategory, byLocation, byStatus }, rows };
+}
+
+export async function reportAssignments() {
+  const rows = (await db.query(
+    `SELECT r.asset_code, r.name AS resource_name, u.name AS student_name, s.title AS startup_title,
+            a.quantity, a.issued_at, a.expected_return_at, a.returned_at, a.status, a.issue_condition, a.return_condition
+     FROM resource_assignments a JOIN resources r ON r.id = a.resource_id JOIN users u ON u.id = a.user_id
+     LEFT JOIN startups s ON s.id = a.startup_id ORDER BY a.issued_at DESC`)).rows;
+  const active = rows.filter((r) => ['ACTIVE', 'RETURN_REQUESTED', 'OVERDUE'].includes(r.status)).length;
+  const overdue = rows.filter((r) => r.status === 'OVERDUE').length;
+  const byStudent = {};
+  for (const r of rows) byStudent[r.student_name] = (byStudent[r.student_name] || 0) + 1;
+  const mostActive = Object.entries(byStudent).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return { summary: { total: rows.length, active, overdue, returned: rows.filter((r) => r.status === 'RETURNED').length, mostActive }, rows };
+}
+
+export async function reportBookings() {
+  const rows = (await db.query(
+    `SELECT r.asset_code, r.name AS resource_name, u.name AS student_name, s.title AS startup_title,
+            b.booking_date, b.start_time, b.end_time, b.status, b.purpose
+     FROM resource_bookings b JOIN resources r ON r.id = b.resource_id JOIN users u ON u.id = b.user_id
+     LEFT JOIN startups s ON s.id = b.startup_id ORDER BY b.booking_date DESC, b.start_time DESC`)).rows;
+  const byStatus = {};
+  for (const r of rows) byStatus[r.status] = (byStatus[r.status] || 0) + 1;
+  const byResource = {};
+  for (const r of rows) byResource[r.resource_name] = (byResource[r.resource_name] || 0) + 1;
+  const mostBooked = Object.entries(byResource).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return { summary: { total: rows.length, byStatus, mostBooked }, rows };
+}
+
+export async function reportMaintenance() {
+  const rows = (await db.query(
+    `SELECT r.asset_code, r.name AS resource_name, m.maintenance_type, m.vendor, m.technician,
+            m.start_date, m.completion_date, m.cost, m.status, i.issue_type
+     FROM resource_maintenance m JOIN resources r ON r.id = m.resource_id LEFT JOIN resource_issues i ON i.id = m.issue_id
+     ORDER BY m.start_date DESC`)).rows;
+  const completed = rows.filter((r) => r.status === 'COMPLETED');
+  const totalCost = completed.reduce((a, r) => a + Number(r.cost || 0), 0);
+  const byResource = {};
+  for (const r of completed) byResource[r.resource_name] = (byResource[r.resource_name] || 0) + Number(r.cost || 0);
+  const mostExpensive = Object.entries(byResource).sort((a, b) => b[1] - a[1]).slice(0, 5);
+  return { summary: { total: rows.length, completed: completed.length, totalCost, mostExpensive }, rows };
+}

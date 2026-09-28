@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= title %></title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+  <style>
+    /* On screen: a normal page with a preview + controls. On print: only the
+       label itself, sized for a small label printer (62mm x 100mm-ish), no
+       chrome, no page margins. */
+    .label-card { width: 320px; border: 2px solid #111; border-radius: 10px; padding: 18px; text-align: center; background: #fff; }
+    #qr { width: 160px; height: 160px; }   /* CSS display size stays fixed; canvas pixel resolution scales with QR complexity for crisp printing */
+    .label-code { font-family: monospace; font-size: 1.3rem; font-weight: 700; letter-spacing: .05em; margin-top: 8px; }
+    .label-name { font-size: .95rem; font-weight: 600; margin-top: 4px; color: #374151; }
+    .no-print { }
+    @media print {
+      body * { visibility: hidden; }
+      .label-card, .label-card * { visibility: visible; }
+      .label-card { position: absolute; top: 0; left: 0; border: 1px solid #000; box-shadow: none; }
+      .no-print { display: none !important; }
+      @page { size: 100mm 62mm; margin: 4mm; }
+    }
+  </style>
+</head>
+<body class="d-flex flex-column align-items-center" style="background:#f3f5f9;min-height:100vh;padding:2.5rem 1rem;">
+
+  <div class="no-print mb-4 d-flex gap-2">
+    <a href="/admin/resources/<%= resource.id %>" class="btn btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i> Back</a>
+    <button class="btn btn-primary fw-bold" onclick="window.print()"><i class="bi bi-printer me-1"></i> Print label</button>
+  </div>
+
+  <div class="label-card">
+    <canvas id="qr"></canvas>
+    <div id="qrError" class="alert alert-danger d-none mt-2 mb-0 py-2 no-print" style="font-size:.75rem;"></div>
+    <div class="label-code"><%= resource.asset_code %></div>
+    <div class="label-name"><%= resource.name %></div>
+  </div>
+
+  <p class="no-print text-muted mt-3" style="font-size:.8rem;max-width:320px;text-align:center;">
+    Scanning this code opens <code><%= publicUrl %></code> — a public page showing only the
+    resource's name, location and status. No student names, costs or internal notes are exposed.
+  </p>
+
+  <script src="/js/qrcode.js"></script>
+  <script>
+    (function () {
+      var canvas = document.getElementById('qr');
+      var errBox = document.getElementById('qrError');
+      try {
+        if (typeof qrcode !== 'function') throw new Error('QR library did not load (missing /js/qrcode.js).');
+        var qr = qrcode(0, 'M');   // typeNumber 0 = auto-size to fit the content
+        qr.addData(<%- JSON.stringify(publicUrl) %>);
+        qr.make();
+
+        var count = qr.getModuleCount();
+        var cell = 5, margin = 4;                 // margin = quiet zone, in modules, per the QR spec
+        var size = (count + margin * 2) * cell;
+        canvas.width = size;
+        canvas.height = size;
+
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, size, size);
+        ctx.fillStyle = '#000';
+        for (var row = 0; row < count; row++) {
+          for (var col = 0; col < count; col++) {
+            if (qr.isDark(row, col)) ctx.fillRect((col + margin) * cell, (row + margin) * cell, cell, cell);
+          }
+        }
+      } catch (err) {
+        console.error('QR render failed:', err);
+        if (errBox) { errBox.textContent = 'Could not generate the QR code: ' + err.message; errBox.classList.remove('d-none'); }
+      }
+    })();
+  </script>
+</body>
+</html>

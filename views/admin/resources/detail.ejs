@@ -21,6 +21,7 @@
       <% if (resource.quantity === 1 && ['AVAILABLE','DAMAGED'].includes(resource.status)) { %>
       <button class="btn btn-primary btn-sm mt-2" data-bs-toggle="modal" data-bs-target="#dtMaintModal"><i class="bi bi-tools me-1"></i>Start maintenance</button>
       <% } %>
+      <a href="/admin/resources/<%= resource.id %>/label" class="btn btn-outline-primary btn-sm mt-2"><i class="bi bi-qr-code me-1"></i>Generate QR / Print label</a>
     </div></div>
   </div>
 

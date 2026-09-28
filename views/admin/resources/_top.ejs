@@ -25,7 +25,7 @@
       <%- include('../../layouts/flash') %>
       <ul class="nav nav-pills rs-tabs mb-3 gap-1 flex-wrap">
         <% [['overview','Overview','/admin/resources/overview'],['all','All resources','/admin/resources'],['requests','Requests','/admin/resources/requests'],['bookings','Bookings','/admin/resources/bookings'],
-            ['assignments','Assignments','/admin/resources/assignments'],['issues','Issues','/admin/resources/issues'],['maintenance','Maintenance','/admin/resources/maintenance'],['categories','Categories','/admin/resources/categories']].forEach(function(t){ %>
+            ['assignments','Assignments','/admin/resources/assignments'],['issues','Issues','/admin/resources/issues'],['maintenance','Maintenance','/admin/resources/maintenance'],['reports','Reports','/admin/resources/reports'],['categories','Categories','/admin/resources/categories']].forEach(function(t){ %>
           <li class="nav-item"><a class="nav-link <%= active === t[0] ? 'active' : '' %>" href="<%= t[2] %>"><%= t[1] %></a></li>
         <% }); %>
       </ul>

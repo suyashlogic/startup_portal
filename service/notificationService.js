@@ -14,11 +14,16 @@
  *
  * Scaling seam: replace `enqueueEmail` with `queue.add('email', job)` (BullMQ /
  * SQS) and run `sendTemplatedEmail` in a worker. Nothing else changes.
+ *
+ * Resource-management events (requests, issuing, returns, bookings, issues,
+ * maintenance) follow exactly this pattern and were added in the same style —
+ * see the "RESOURCE MANAGEMENT" section below the startup/funding events.
  */
 import db from '../config/db.js';
 import { sendTemplatedEmail } from './emailService.js';
 import { templateMeta } from './emailTemplates.js';
 import { createNotification, emailEnabled } from './notificationStore.js';
+import { markOverdue } from './resourceService.js';
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
 const one = async (sql, params) => (await db.query(sql, params)).rows[0] || null;
@@ -291,9 +296,250 @@ const progressUpdateAdded = safe('progressUpdateAdded', async (updateId) => {
   }
 });
 
+/* ═══════════════════ RESOURCE MANAGEMENT ═══════════════════════════════════
+ * Same shape as everything above: routes pass an id, this loads the row(s)
+ * itself, dedupeKey makes every call idempotent, and a failed email never
+ * rolls back the resource transaction (the route already committed by the
+ * time it calls these). */
+
+const loadResourceRequest = (id) => one(
+  `SELECT q.*, r.name AS resource_name, r.asset_code, r.resource_type, s.title AS startup_title,
+          u.id AS user_id, u.name AS student_name, u.email AS student_email
+   FROM resource_requests q JOIN resources r ON r.id = q.resource_id JOIN users u ON u.id = q.user_id
+   LEFT JOIN startups s ON s.id = q.startup_id WHERE q.id = $1`, [id]);
+
+const loadAssignment = (id) => one(
+  `SELECT a.*, r.name AS resource_name, r.asset_code, u.id AS user_id, u.name AS student_name, u.email AS student_email
+   FROM resource_assignments a JOIN resources r ON r.id = a.resource_id JOIN users u ON u.id = a.user_id WHERE a.id = $1`, [id]);
+
+const loadBooking = (id) => one(
+  `SELECT b.*, r.name AS resource_name, r.asset_code, u.id AS user_id, u.name AS student_name, u.email AS student_email
+   FROM resource_bookings b JOIN resources r ON r.id = b.resource_id JOIN users u ON u.id = b.user_id WHERE b.id = $1`, [id]);
+
+const loadIssue = (id) => one(
+  `SELECT i.*, r.name AS resource_name, r.asset_code,
+          u.id AS reporter_id, u.name AS reporter_name, u.email AS reporter_email
+   FROM resource_issues i JOIN resources r ON r.id = i.resource_id LEFT JOIN users u ON u.id = i.reported_by WHERE i.id = $1`, [id]);
+
+const loadMaintenance = (id) => one(
+  `SELECT m.*, r.name AS resource_name, r.asset_code,
+          i.reported_by AS reporter_id, ru.name AS reporter_name, ru.email AS reporter_email
+   FROM resource_maintenance m JOIN resources r ON r.id = m.resource_id
+   LEFT JOIN resource_issues i ON i.id = m.issue_id LEFT JOIN users ru ON ru.id = i.reported_by WHERE m.id = $1`, [id]);
+
+const fmtSlot = (b) => `${fmtDate(b.booking_date).split(',')[0]}, ${String(b.start_time).slice(0, 5)}–${String(b.end_time).slice(0, 5)}`;
+
+/* ── Requests ─────────────────────────────────────────────────────────────── */
+const resourceRequestSubmitted = safe('resourceRequestSubmitted', async (requestId) => {
+  const q = await loadResourceRequest(requestId);
+  if (!q) return;
+  const key = `RESOURCE_REQUEST_SUBMITTED:${q.id}`;
+  const entity = { type: 'resource_request', id: q.id };
+  const common = { resourceName: q.resource_name, assetCode: q.asset_code, quantity: q.quantity, purpose: excerpt(q.purpose, 300),
+                   requestedFrom: fmtDate(q.requested_from).split(',')[0], requestedUntil: fmtDate(q.requested_until).split(',')[0] };
+
+  await deliver({
+    to: { id: q.user_id, name: q.student_name, email: q.student_email }, dedupeKey: key, entity,
+    inApp: { type: 'RESOURCE_REQUEST_SUBMITTED', title: 'Request submitted', message: `Your request for ${q.resource_name} is awaiting review.`, link: '/student/my-resources' },
+    email: { template: 'resource-request-submitted', data: { ...common, url: abs('/student/my-resources') } },
+  });
+  await notifyAdmins({
+    dedupeKey: key, entity,
+    inApp: { type: 'RESOURCE_REQUEST_SUBMITTED', title: 'New resource request', message: `${q.student_name} requested ${q.resource_name}${q.startup_title ? ` for "${q.startup_title}"` : ''}.`, link: '/admin/resources/requests' },
+    email: { template: 'resource-request-submitted-admin', data: { ...common, studentName: q.student_name, startupTitle: q.startup_title || '—', url: abs('/admin/resources/requests') } },
+  });
+});
+
+const resourceRequestApproved = safe('resourceRequestApproved', async (requestId) => {
+  const q = await loadResourceRequest(requestId);
+  if (!q || q.status !== 'APPROVED') return;
+  await deliver({
+    to: { id: q.user_id, name: q.student_name, email: q.student_email },
+    dedupeKey: `RESOURCE_REQUEST_APPROVED:${q.id}:${ver(q.updated_at)}`, entity: { type: 'resource_request', id: q.id },
+    inApp: { type: 'RESOURCE_REQUEST_APPROVED', title: 'Request approved', message: `Your request for ${q.resource_name} was approved. It will be issued shortly.`, link: '/student/my-resources' },
+    email: { template: 'resource-request-approved', data: { resourceName: q.resource_name, assetCode: q.asset_code, url: abs('/student/my-resources') } },
+  });
+});
+
+const resourceRequestRejected = safe('resourceRequestRejected', async (requestId) => {
+  const q = await loadResourceRequest(requestId);
+  if (!q || q.status !== 'REJECTED') return;
+  await deliver({
+    to: { id: q.user_id, name: q.student_name, email: q.student_email },
+    dedupeKey: `RESOURCE_REQUEST_REJECTED:${q.id}:${ver(q.updated_at)}`, entity: { type: 'resource_request', id: q.id },
+    inApp: { type: 'RESOURCE_REQUEST_REJECTED', title: 'Request update', message: `Your request for ${q.resource_name} was not approved.`, link: '/student/my-resources' },
+    email: { template: 'resource-request-rejected', data: { resourceName: q.resource_name, adminRemark: q.admin_remarks || '', url: abs('/student/my-resources') } },
+  });
+});
+
+/* ── Issue / return ──────────────────────────────────────────────────────── */
+const resourceIssued = safe('resourceIssued', async (assignmentId) => {
+  const a = await loadAssignment(assignmentId);
+  if (!a) return;
+  await deliver({
+    to: { id: a.user_id, name: a.student_name, email: a.student_email },
+    dedupeKey: `RESOURCE_ISSUED:${a.id}`, entity: { type: 'resource_assignment', id: a.id },
+    inApp: { type: 'RESOURCE_ISSUED', title: 'Resource issued', message: `${a.resource_name} (${a.asset_code}) has been issued to you. Due ${fmtDate(a.expected_return_at).split(',')[0]}.`, link: '/student/my-resources' },
+    email: { template: 'resource-issued', data: { resourceName: a.resource_name, assetCode: a.asset_code, dueDate: fmtDate(a.expected_return_at), condition: a.issue_condition, url: abs('/student/my-resources') } },
+  });
+});
+
+const resourceReturned = safe('resourceReturned', async (assignmentId) => {
+  const a = await loadAssignment(assignmentId);
+  if (!a || !['RETURNED', 'DAMAGED', 'LOST'].includes(a.status)) return;
+  const clean = a.status === 'RETURNED';
+  await deliver({
+    to: { id: a.user_id, name: a.student_name, email: a.student_email },
+    dedupeKey: `RESOURCE_RETURNED:${a.id}`, entity: { type: 'resource_assignment', id: a.id },
+    inApp: { type: 'RESOURCE_RETURNED', title: 'Return recorded', message: clean ? `Your return of ${a.resource_name} was recorded. Thanks!` : `Your return of ${a.resource_name} was recorded — logged as ${a.return_condition?.toLowerCase().replace(/_/g, ' ')}.`, link: '/student/my-resources' },
+    email: { template: 'resource-returned', data: { resourceName: a.resource_name, assetCode: a.asset_code, condition: a.return_condition, clean, url: abs('/student/my-resources') } },
+  });
+});
+
+/* ── Issues / maintenance ─────────────────────────────────────────────────── */
+const resourceIssueReported = safe('resourceIssueReported', async (issueId) => {
+  const i = await loadIssue(issueId);
+  if (!i) return;
+  await notifyAdmins({
+    dedupeKey: `RESOURCE_ISSUE_REPORTED:${i.id}`, entity: { type: 'resource_issue', id: i.id },
+    inApp: { type: 'RESOURCE_ISSUE_REPORTED', title: 'Resource issue reported', message: `${i.reporter_name || 'Someone'} reported ${i.issue_type.toLowerCase()} on ${i.resource_name} (${i.asset_code}).`, link: '/admin/resources/issues' },
+    email: { template: 'resource-issue-reported-admin', data: { resourceName: i.resource_name, assetCode: i.asset_code, issueType: i.issue_type, description: excerpt(i.description, 300), reporterName: i.reporter_name || 'Admin', url: abs('/admin/resources/issues') } },
+  });
+});
+
+const resourceMaintenanceStarted = safe('resourceMaintenanceStarted', async (maintenanceId) => {
+  const m = await loadMaintenance(maintenanceId);
+  if (!m || !m.reporter_id) return;   // only the student who reported it (if any) gets notified; ad-hoc maintenance has no one to tell
+  await deliver({
+    to: { id: m.reporter_id, name: m.reporter_name, email: m.reporter_email },
+    dedupeKey: `RESOURCE_MAINTENANCE_STARTED:${m.id}`, entity: { type: 'resource_maintenance', id: m.id },
+    inApp: { type: 'RESOURCE_MAINTENANCE_STARTED', title: 'Maintenance started', message: `${m.resource_name} (${m.asset_code}) has gone in for maintenance following your report.`, link: '/student/resources' },
+    email: { template: 'resource-maintenance-started', data: { resourceName: m.resource_name, assetCode: m.asset_code, url: abs('/student/resources') } },
+  });
+});
+
+const resourceMaintenanceCompleted = safe('resourceMaintenanceCompleted', async (maintenanceId) => {
+  const m = await loadMaintenance(maintenanceId);
+  if (!m) return;
+  if (m.reporter_id) {
+    await deliver({
+      to: { id: m.reporter_id, name: m.reporter_name, email: m.reporter_email },
+      dedupeKey: `RESOURCE_MAINTENANCE_COMPLETED:${m.id}`, entity: { type: 'resource_maintenance', id: m.id },
+      inApp: { type: 'RESOURCE_MAINTENANCE_COMPLETED', title: 'Maintenance completed', message: `${m.resource_name} (${m.asset_code}) is repaired and available again.`, link: '/student/resources' },
+      email: { template: 'resource-maintenance-completed', data: { resourceName: m.resource_name, assetCode: m.asset_code, url: abs('/student/resources') } },
+    });
+  }
+});
+
+/* ── Bookings ─────────────────────────────────────────────────────────────── */
+const resourceBookingSubmitted = safe('resourceBookingSubmitted', async (bookingId) => {
+  const b = await loadBooking(bookingId);
+  if (!b) return;
+  const key = `RESOURCE_BOOKING_SUBMITTED:${b.id}`;
+  const entity = { type: 'resource_booking', id: b.id };
+  const common = { resourceName: b.resource_name, assetCode: b.asset_code, slot: fmtSlot(b), purpose: excerpt(b.purpose, 300) };
+
+  await deliver({
+    to: { id: b.user_id, name: b.student_name, email: b.student_email }, dedupeKey: key, entity,
+    inApp: { type: 'RESOURCE_BOOKING_SUBMITTED', title: 'Booking submitted', message: `Your booking for ${b.resource_name} (${fmtSlot(b)}) is awaiting approval.`, link: '/student/my-bookings' },
+    email: { template: 'resource-booking-submitted', data: { ...common, url: abs('/student/my-bookings') } },
+  });
+  await notifyAdmins({
+    dedupeKey: key, entity,
+    inApp: { type: 'RESOURCE_BOOKING_SUBMITTED', title: 'New booking request', message: `${b.student_name} requested ${b.resource_name} (${fmtSlot(b)}).`, link: '/admin/resources/bookings' },
+    email: { template: 'resource-booking-submitted-admin', data: { ...common, studentName: b.student_name, url: abs('/admin/resources/bookings') } },
+  });
+});
+
+const resourceBookingApproved = safe('resourceBookingApproved', async (bookingId) => {
+  const b = await loadBooking(bookingId);
+  if (!b || b.status !== 'APPROVED') return;
+  await deliver({
+    to: { id: b.user_id, name: b.student_name, email: b.student_email },
+    dedupeKey: `RESOURCE_BOOKING_APPROVED:${b.id}:${ver(b.updated_at)}`, entity: { type: 'resource_booking', id: b.id },
+    inApp: { type: 'RESOURCE_BOOKING_APPROVED', title: 'Booking approved', message: `Your booking for ${b.resource_name} (${fmtSlot(b)}) is confirmed.`, link: '/student/my-bookings' },
+    email: { template: 'resource-booking-approved', data: { resourceName: b.resource_name, slot: fmtSlot(b), url: abs('/student/my-bookings') } },
+  });
+});
+
+const resourceBookingRejected = safe('resourceBookingRejected', async (bookingId) => {
+  const b = await loadBooking(bookingId);
+  if (!b || b.status !== 'REJECTED') return;
+  await deliver({
+    to: { id: b.user_id, name: b.student_name, email: b.student_email },
+    dedupeKey: `RESOURCE_BOOKING_REJECTED:${b.id}:${ver(b.updated_at)}`, entity: { type: 'resource_booking', id: b.id },
+    inApp: { type: 'RESOURCE_BOOKING_REJECTED', title: 'Booking update', message: `Your booking for ${b.resource_name} (${fmtSlot(b)}) was not approved.`, link: '/student/my-bookings' },
+    email: { template: 'resource-booking-rejected', data: { resourceName: b.resource_name, slot: fmtSlot(b), adminRemark: b.admin_remarks || '', url: abs('/student/my-bookings') } },
+  });
+});
+
+/* ── Overdue + reminders (called by admin page loads AND the scheduler; both
+ * paths are naturally idempotent — markOverdue()'s own WHERE clause only ever
+ * flags a row once, and every notification below carries a dedupe key too). ── */
+const resourceOverdueCheck = safe('resourceOverdueCheck', async () => {
+  const rows = await markOverdue();
+  for (const row of rows) {
+    const a = await loadAssignment(row.id);
+    if (!a) continue;
+    await deliver({
+      to: { id: a.user_id, name: a.student_name, email: a.student_email },
+      dedupeKey: `RESOURCE_OVERDUE:${a.id}`, entity: { type: 'resource_assignment', id: a.id },
+      inApp: { type: 'RESOURCE_OVERDUE', title: 'Resource overdue', message: `${a.resource_name} (${a.asset_code}) was due back on ${fmtDate(a.expected_return_at).split(',')[0]}. Please return it.`, link: '/student/my-resources' },
+      email: { template: 'resource-overdue', data: { resourceName: a.resource_name, assetCode: a.asset_code, dueDate: fmtDate(a.expected_return_at), url: abs('/student/my-resources') } },
+    });
+  }
+  return rows.length;
+});
+
+/** Scheduler entry point: sends a reminder 3 days before, 1 day before, and on the due date. */
+const sendReturnReminders = safe('sendReturnReminders', async () => {
+  const rows = (await db.query(
+    `SELECT a.id, GREATEST(0, (a.expected_return_at::date - CURRENT_DATE))::int AS days_left
+     FROM resource_assignments a WHERE a.status = 'ACTIVE'
+       AND a.expected_return_at::date - CURRENT_DATE IN (3, 1, 0)`)).rows;
+  let sent = 0;
+  for (const row of rows) {
+    const a = await loadAssignment(row.id);
+    if (!a) continue;
+    const when = row.days_left === 0 ? 'today' : `in ${row.days_left} day${row.days_left > 1 ? 's' : ''}`;
+    const res = await deliver({
+      to: { id: a.user_id, name: a.student_name, email: a.student_email },
+      dedupeKey: `RESOURCE_RETURN_REMINDER:${a.id}:${row.days_left}`, entity: { type: 'resource_assignment', id: a.id },
+      inApp: { type: 'RESOURCE_RETURN_REMINDER', title: 'Return reminder', message: `${a.resource_name} (${a.asset_code}) is due back ${when}.`, link: '/student/my-resources' },
+      email: { template: 'resource-return-reminder', data: { resourceName: a.resource_name, assetCode: a.asset_code, when, dueDate: fmtDate(a.expected_return_at), url: abs('/student/my-resources') } },
+    });
+    if (res === 'ok') sent++;
+  }
+  return sent;
+});
+
+/** Scheduler entry point: reminds a student the day before an approved booking. */
+const sendBookingReminders = safe('sendBookingReminders', async () => {
+  const rows = (await db.query(
+    `SELECT id FROM resource_bookings WHERE status = 'APPROVED' AND booking_date = CURRENT_DATE + INTERVAL '1 day'`)).rows;
+  let sent = 0;
+  for (const row of rows) {
+    const b = await loadBooking(row.id);
+    if (!b) continue;
+    const res = await deliver({
+      to: { id: b.user_id, name: b.student_name, email: b.student_email },
+      dedupeKey: `RESOURCE_BOOKING_REMINDER:${b.id}`, entity: { type: 'resource_booking', id: b.id },
+      inApp: { type: 'RESOURCE_BOOKING_REMINDER', title: 'Booking tomorrow', message: `Reminder: your booking for ${b.resource_name} is tomorrow (${fmtSlot(b)}).`, link: '/student/my-bookings' },
+      email: { template: 'resource-booking-reminder', data: { resourceName: b.resource_name, slot: fmtSlot(b), url: abs('/student/my-bookings') } },
+    });
+    if (res === 'ok') sent++;
+  }
+  return sent;
+});
+
 export default {
   userRegistered, passwordResetRequested, passwordChanged, userRoleChanged,
   startupSubmitted, startupReviewed, mentorAssigned, mentorRemoved,
   fundingSubmitted, fundingReviewed, mentorFeedbackAdded, progressUpdateAdded,
+  resourceRequestSubmitted, resourceRequestApproved, resourceRequestRejected,
+  resourceIssued, resourceReturned, resourceIssueReported,
+  resourceMaintenanceStarted, resourceMaintenanceCompleted,
+  resourceBookingSubmitted, resourceBookingApproved, resourceBookingRejected,
+  resourceOverdueCheck, sendReturnReminders, sendBookingReminders,
   drain,
 };
