@@ -8,6 +8,7 @@ import 'dotenv/config';
 import { setLocals } from './middleware/authMiddleware.js';
 import { setNotificationLocals } from './middleware/notificationLocals.js';   
 import { startResourceReminders, stopResourceReminders } from './service/resourceReminderScheduler.js';
+import { startMeetingReminders, stopMeetingReminders } from './service/meetingReminderScheduler.js';
 import passport from 'passport';
 import authRoutes          from './routes/auth.js';
 import studentRoutes       from './routes/student.js';
@@ -20,6 +21,8 @@ import adminResourceRoutes from './routes/adminResources.js';
 import studentResourceRoutes from './routes/studentResources.js';
 import mentorResourceRoutes from './routes/mentorResources.js';
 import publicResourceRoutes from './routes/publicResources.js';
+import adminMeetingRoutes   from './routes/adminMeetings.js';
+import studentMeetingRoutes from './routes/studentMeetings.js';
 
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +59,8 @@ app.use(setNotificationLocals);                                                /
 app.use('/',              marketingRoutes);
 app.use('/auth',          authRoutes);
 app.use('/student', studentResourceRoutes);
+app.use('/admin',   adminMeetingRoutes);      // mount BEFORE adminRoutes — more specific /admin/meetings + /admin/startups/:id/meeting paths win
+app.use('/student', studentMeetingRoutes);    // mount BEFORE studentRoutes — more specific /student/meetings paths win
 app.use('/student', studentRoutes);
 app.use('/admin/resources', adminResourceRoutes);   // must come BEFORE app.use('/admin', adminRoutes)
 app.use('/admin',           adminRoutes)
@@ -89,11 +94,16 @@ const server = app.listen(PORT, () => {
 // for why this is a plain setInterval and not a queue). Idempotent, so a restart is safe.
 startResourceReminders();
 
+// Same pattern for startup-review-meeting reminders (24h-before emails + stale
+// no-show flagging) — see service/meetingReminderScheduler.js.
+startMeetingReminders();
+
 // Let queued emails finish before the process exits (Ctrl+C / deploy restarts).
 for (const sig of ['SIGINT', 'SIGTERM']) {
   process.on(sig, async () => {
     server.close();
     stopResourceReminders();
+    stopMeetingReminders();
     await drain();
     process.exit(0);
   });

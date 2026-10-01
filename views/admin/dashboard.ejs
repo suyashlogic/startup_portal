@@ -196,11 +196,11 @@
                         </div>
                       </div>
                       <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                        <span class="badge badge-<%= s.status %> d-inline-flex align-items-center gap-1">
+                        <span class="badge badge-<%= ['approved','meeting_completed'].includes(s.status) ? 'approved' : s.status === 'rejected' ? 'rejected' : 'pending' %> d-inline-flex align-items-center gap-1">
                           <% if (s.status === 'approved') { %><i class="bi bi-check-circle-fill" style="font-size:.6rem;"></i>
                           <% } else if (s.status === 'rejected') { %><i class="bi bi-x-circle-fill" style="font-size:.6rem;"></i>
                           <% } else { %><i class="bi bi-clock" style="font-size:.6rem;"></i><% } %>
-                          <%= s.status %>
+                          <%= s.status.replace(/_/g,' ') %>
                         </span>
                         <a href="/admin/startup/<%= s.id %>" class="btn btn-outline-secondary btn-sm" style="font-size:.72rem;padding:.25rem .55rem;">
                           Review
@@ -215,6 +215,60 @@
         </div>
 
       </div><!-- /row -->
+
+      <!-- ── Startup review meetings ── -->
+      <% if (typeof meetingStats !== 'undefined' && meetingStats) { %>
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <a href="/admin/meetings?view=upcoming" class="text-decoration-none">
+            <div class="stat-card" style="border-top-color:#d97706;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:#fef9ec;">
+                  <i class="bi bi-calendar3" style="font-size:1.1rem;color:#d97706;"></i>
+                </div>
+                <div><div class="stat-val" style="color:#d97706;"><%= meetingStats.upcoming %></div><div class="stat-lbl">Upcoming Meetings</div></div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-md-3">
+          <a href="/admin/meetings?view=today" class="text-decoration-none">
+            <div class="stat-card">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:var(--ip-red-pale);">
+                  <i class="bi bi-calendar-event text-primary" style="font-size:1.1rem;"></i>
+                </div>
+                <div><div class="stat-val"><%= meetingStats.today %></div><div class="stat-lbl">Today's Meetings</div></div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-md-3">
+          <a href="/admin/meetings?view=completed" class="text-decoration-none">
+            <div class="stat-card" style="border-top-color:#1a7a4a;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:#f0fdf4;">
+                  <i class="bi bi-check-circle" style="font-size:1.1rem;color:#1a7a4a;"></i>
+                </div>
+                <div><div class="stat-val" style="color:#1a7a4a;"><%= meetingStats.completed %></div><div class="stat-lbl">Completed Meetings</div></div>
+              </div>
+            </div>
+          </a>
+        </div>
+        <div class="col-6 col-md-3">
+          <a href="/admin/startups" class="text-decoration-none">
+            <div class="stat-card" style="border-top-color:#7c3aed;">
+              <div class="d-flex align-items-center gap-3">
+                <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:42px;height:42px;background:#f5f3ff;">
+                  <i class="bi bi-chat-left-text" style="font-size:1.1rem;color:#7c3aed;"></i>
+                </div>
+                <div><div class="stat-val" style="color:#7c3aed;"><%= meetingStats.changes_requested %></div><div class="stat-lbl">Changes Requested</div></div>
+              </div>
+            </div>
+          </a>
+        </div>
+      </div>
+      <% } %>
 
       <!-- ── Operations: notifications, email health, audit trail ── -->
       <div class="row g-3 mb-4">

@@ -144,6 +144,68 @@ const TEMPLATES = {
     cta: () => 'Open my dashboard',
   },
 
+  /* ── Startup review meetings ──────────────────────────────────────────── */
+  'meeting-scheduled': {
+    category: 'startup_updates',
+    subject: (d) => `Review Meeting Scheduled — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'Meeting scheduled', tone: 'pending' }),
+    details: (d) => rows(row('Startup', d.startupTitle), row('When', `${d.dateLabel}, ${d.timeLabel} (IST)`),
+                         row('Type', cap(String(d.meetingType).toLowerCase().replace('_', ' '))),
+                         row('Location', d.location), row('Meeting link', d.meetingLink)),
+    cta: () => 'View meeting details',
+  },
+  'meeting-rescheduled': {
+    category: 'startup_updates',
+    subject: (d) => `Review Meeting Rescheduled — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'New time', tone: 'pending' }),
+    details: (d) => rows(row('Startup', d.startupTitle), row('New date/time', `${d.dateLabel}, ${d.timeLabel} (IST)`),
+                         row('Location', d.location), row('Meeting link', d.meetingLink)),
+    cta: () => 'View meeting details',
+  },
+  'meeting-cancelled': {
+    category: 'startup_updates',
+    subject: (d) => `Review Meeting Cancelled — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'Cancelled', tone: 'rejected' }),
+    details: (d) => rows(row('Startup', d.startupTitle), row('Was scheduled for', `${d.dateLabel}, ${d.timeLabel}`)),
+    cta: () => 'View startup',
+  },
+  'meeting-reminder': {
+    category: 'startup_updates',
+    subject: (d) => `Reminder: Review Meeting Tomorrow — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'Tomorrow', tone: 'pending' }),
+    details: (d) => rows(row('Startup', d.startupTitle), row('When', `${d.dateLabel}, ${d.timeLabel} (IST)`), row('Location', d.location)),
+    cta: () => 'View meeting details',
+  },
+  'meeting-completed': {
+    category: 'startup_updates',
+    subject: (d) => `Review Meeting Completed — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'Completed', tone: 'approved' }),
+    details: (d) => rows(row('Startup', d.startupTitle)),
+    cta: () => 'View startup',
+  },
+  'changes-requested': {
+    category: 'startup_updates',
+    subject: (d) => `Action Needed on Your Startup — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'Changes requested', tone: 'pending' }),
+    details: (d) => rows(row('Startup', d.startupTitle)),
+    cta: () => 'Update my submission',
+  },
+  'reschedule-requested-admin': {
+    category: 'startup_updates',
+    subject: (d) => `Reschedule Requested — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'Needs a decision', tone: 'pending' }),
+    details: (d) => rows(row('Startup', d.startupTitle), row('Student', d.studentName),
+                         row('Current time', `${d.dateLabel}, ${d.timeLabel}`)),
+    cta: () => 'Review the request',
+  },
+  'reschedule-rejected': {
+    category: 'startup_updates',
+    subject: (d) => `Reschedule Request Update — ${oneLine(d.startupTitle)}`,
+    badge: () => ({ text: 'Not approved', tone: 'rejected' }),
+    details: (d) => rows(row('Startup', d.startupTitle), row('Meeting stays at', `${d.dateLabel}, ${d.timeLabel}`)),
+    cta: () => 'View meeting details',
+  },
+
   /* ── Resource management ──────────────────────────────────────────────── */
   'resource-request-submitted': {
     category: 'resource_updates',

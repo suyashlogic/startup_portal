@@ -1,0 +1,5 @@
+<p>Your review meeting for <strong><%= startupTitle %></strong> has a new time.</p>
+<p><strong>New date/time:</strong> <%= dateLabel %>, <%= timeLabel %> (IST)</p>
+<% if (meetingType === 'ONLINE') { %><p><strong>Where:</strong> Online — see the meeting link in your dashboard.</p>
+<% } else { %><p><strong>Where:</strong> <%= location %></p><% } %>
+<p>Please update your calendar accordingly.</p>

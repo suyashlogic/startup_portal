@@ -24,11 +24,11 @@
                 <i class="bi bi-tag me-1"></i><%= startup.domain %>
               </span>
               <span class="badge badge-<%= startup.stage %>"><%= startup.stage %></span>
-              <span class="badge badge-<%= startup.status %> d-inline-flex align-items-center gap-1">
+              <span class="badge badge-<%= ['approved','meeting_completed'].includes(startup.status) ? 'approved' : startup.status === 'rejected' ? 'rejected' : 'pending' %> d-inline-flex align-items-center gap-1">
                 <% if (startup.status === 'approved') { %><i class="bi bi-check-circle-fill" style="font-size:.65rem;"></i>
                 <% } else if (startup.status === 'rejected') { %><i class="bi bi-x-circle-fill" style="font-size:.65rem;"></i>
                 <% } else { %><i class="bi bi-clock" style="font-size:.65rem;"></i><% } %>
-                <%= startup.status %>
+                <%= startup.status.replace(/_/g,' ') %>
               </span>
             </div>
           </div>
@@ -42,12 +42,12 @@
 
       <% if (startup.admin_remark) { %>
         <div class="alert d-flex align-items-start gap-3 border-0 rounded-3 mb-4 py-3"
-          style="background:<%= startup.status === 'approved' ? '#f0fdf4' : '#fee2e2' %>;
-                 border-left:4px solid <%= startup.status === 'approved' ? '#22c55e' : '#c0392b' %> !important;
+          style="background:<%= startup.status === 'approved' ? '#f0fdf4' : startup.status === 'rejected' ? '#fee2e2' : '#fef9ec' %>;
+                 border-left:4px solid <%= startup.status === 'approved' ? '#22c55e' : startup.status === 'rejected' ? '#c0392b' : '#f59e0b' %> !important;
                  border-radius:0 10px 10px 0 !important;">
-          <i class="bi bi-<%= startup.status === 'approved' ? 'check-circle-fill text-success' : 'exclamation-triangle-fill text-danger' %> flex-shrink-0 mt-1"></i>
+          <i class="bi bi-<%= startup.status === 'approved' ? 'check-circle-fill text-success' : startup.status === 'rejected' ? 'exclamation-triangle-fill text-danger' : 'info-circle-fill' %> flex-shrink-0 mt-1"></i>
           <div style="font-size:.875rem;">
-            <strong>Admin remark:</strong> <%= startup.admin_remark %>
+            <strong><%= startup.status === 'changes_requested' ? 'Requested changes' : 'Admin remark' %>:</strong> <%= startup.admin_remark %>
           </div>
         </div>
       <% } %>
@@ -169,6 +169,23 @@
               <% } %>
             </div>
           </div>
+
+          <!-- ── Review meetings ─────────────────────────────────────────── -->
+          <% if (typeof meetings !== 'undefined' && meetings.length) { %>
+            <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+              <div class="card-body p-4">
+                <div class="card-section-title"><i class="bi bi-calendar3 me-1"></i>Review meetings</div>
+                <div class="d-flex flex-column gap-2">
+                  <% meetings.forEach(m => { %>
+                    <a href="/student/meetings/<%= m.id %>" class="d-flex justify-content-between align-items-center text-decoration-none p-2 rounded-3" style="background:#f8f9fa;border:1px solid #e3e7ef;color:#111;font-size:.8rem;">
+                      <span><%= new Date(m.meeting_date).toLocaleDateString('en-IN',{day:'numeric',month:'short'}) %> · <%= m.start_time.slice(0,5) %></span>
+                      <span class="badge badge-<%= m.status === 'COMPLETED' ? 'approved' : ['CANCELLED','NO_SHOW'].includes(m.status) ? 'rejected' : 'pending' %>"><%= m.status.replace(/_/g,' ') %></span>
+                    </a>
+                  <% }); %>
+                </div>
+              </div>
+            </div>
+          <% } %>
 
           <div class="card border-0 shadow-sm" style="border-radius:14px;">
             <div class="card-body p-4">

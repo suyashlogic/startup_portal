@@ -18,6 +18,11 @@
  * Resource-management events (requests, issuing, returns, bookings, issues,
  * maintenance) follow exactly this pattern and were added in the same style —
  * see the "RESOURCE MANAGEMENT" section below the startup/funding events.
+ *
+ * Startup-review-meeting events (schedule, reschedule, cancel, complete,
+ * changes requested, reschedule requests, 24h reminders) follow the same
+ * pattern too — see the "STARTUP REVIEW MEETINGS" section just above
+ * "RESOURCE MANAGEMENT".
  */
 import db from '../config/db.js';
 import { sendTemplatedEmail } from './emailService.js';
@@ -296,6 +301,145 @@ const progressUpdateAdded = safe('progressUpdateAdded', async (updateId) => {
   }
 });
 
+/* ═══════════════════ STARTUP REVIEW MEETINGS ═══════════════════════════════
+ * Same shape as everything above: routes pass an id, this loads the row(s)
+ * itself, dedupeKey makes every call idempotent, and a failed email never
+ * rolls back the meeting transaction (the route already committed by the
+ * time it calls these). */
+
+const loadMeeting = (id) => one(
+  `SELECT sm.*, s.title AS startup_title, s.domain, s.student_id,
+          stu.name AS student_name, stu.email AS student_email,
+          rev.id AS reviewer_id, rev.name AS reviewer_name, rev.email AS reviewer_email
+   FROM startup_meetings sm
+   JOIN startups s ON s.id = sm.startup_id
+   JOIN users stu ON stu.id = s.student_id
+   LEFT JOIN users rev ON rev.id = sm.reviewer_id
+   WHERE sm.id = $1`, [id]);
+
+const meetingDateLabel = (m) => new Date(m.meeting_date).toLocaleDateString('en-IN', { timeZone: TZ(), day: 'numeric', month: 'short', year: 'numeric' });
+const to12h = (t) => { const [h, mi] = String(t).slice(0, 5).split(':').map(Number); const ap = h >= 12 ? 'PM' : 'AM'; const hh = ((h + 11) % 12) + 1; return `${hh}:${String(mi).padStart(2, '0')} ${ap}`; };
+const meetingTimeLabel = (m) => `${to12h(m.start_time)} – ${to12h(m.end_time)}`;
+const meetingCommon = (m) => ({
+  startupTitle: m.startup_title, dateLabel: meetingDateLabel(m), timeLabel: meetingTimeLabel(m),
+  meetingType: m.meeting_type, location: m.location || '', meetingLink: m.meeting_link || '',
+});
+
+const meetingScheduled = safe('meetingScheduled', async (meetingId) => {
+  const m = await loadMeeting(meetingId);
+  if (!m || m.status !== 'SCHEDULED') return;
+  const url = abs(`/student/meetings/${m.id}`);
+  await deliver({
+    to: { id: m.student_id, name: m.student_name, email: m.student_email },
+    dedupeKey: `MEETING_SCHEDULED:${m.id}:${ver(m.created_at)}`, entity: { type: 'startup_meeting', id: m.id },
+    inApp: { type: 'MEETING_SCHEDULED', title: 'Review meeting scheduled',
+             message: `Your review meeting for "${m.startup_title}" is set for ${meetingDateLabel(m)}, ${meetingTimeLabel(m)}.`,
+             link: `/student/meetings/${m.id}` },
+    email: { template: 'meeting-scheduled', data: { ...meetingCommon(m), url } },
+  });
+});
+
+const meetingRescheduled = safe('meetingRescheduled', async (meetingId) => {
+  const m = await loadMeeting(meetingId);
+  if (!m || m.status !== 'SCHEDULED') return;
+  await deliver({
+    to: { id: m.student_id, name: m.student_name, email: m.student_email },
+    dedupeKey: `MEETING_RESCHEDULED:${m.id}:${ver(m.updated_at)}`, entity: { type: 'startup_meeting', id: m.id },
+    inApp: { type: 'MEETING_RESCHEDULED', title: 'Review meeting rescheduled',
+             message: `Your review meeting for "${m.startup_title}" moved to ${meetingDateLabel(m)}, ${meetingTimeLabel(m)}.`,
+             link: `/student/meetings/${m.id}` },
+    email: { template: 'meeting-rescheduled', data: { ...meetingCommon(m), url: abs(`/student/meetings/${m.id}`) } },
+  });
+});
+
+const meetingCancelled = safe('meetingCancelled', async (meetingId) => {
+  const m = await loadMeeting(meetingId);
+  if (!m || m.status !== 'CANCELLED') return;
+  await deliver({
+    to: { id: m.student_id, name: m.student_name, email: m.student_email },
+    dedupeKey: `MEETING_CANCELLED:${m.id}:${ver(m.updated_at)}`, entity: { type: 'startup_meeting', id: m.id },
+    inApp: { type: 'MEETING_CANCELLED', title: 'Review meeting cancelled',
+             message: `Your review meeting for "${m.startup_title}" (was ${meetingDateLabel(m)}) was cancelled.`,
+             link: `/student/startup/${m.startup_id}` },
+    email: { template: 'meeting-cancelled', data: { ...meetingCommon(m), reason: m.cancel_reason || '', url: abs(`/student/startup/${m.startup_id}`) } },
+  });
+});
+
+const meetingCompleted = safe('meetingCompleted', async (meetingId) => {
+  const m = await loadMeeting(meetingId);
+  if (!m || m.status !== 'COMPLETED') return;
+  await deliver({
+    to: { id: m.student_id, name: m.student_name, email: m.student_email },
+    dedupeKey: `MEETING_COMPLETED:${m.id}`, entity: { type: 'startup_meeting', id: m.id },
+    inApp: { type: 'MEETING_COMPLETED', title: 'Review meeting completed',
+             message: `Your review meeting for "${m.startup_title}" is complete. The team will be in touch with next steps.`,
+             link: `/student/startup/${m.startup_id}` },
+    email: { template: 'meeting-completed', data: { ...meetingCommon(m), url: abs(`/student/startup/${m.startup_id}`) } },
+  });
+});
+
+/** Call after startups.status is set to 'changes_requested' and admin_remark holds the requested changes. */
+const changesRequested = safe('changesRequested', async (startupId) => {
+  const s = await loadStartup(startupId);
+  if (!s || s.status !== 'changes_requested') return;
+  await deliver({
+    to: { id: s.student_id, name: s.student_name, email: s.student_email },
+    dedupeKey: `CHANGES_REQUESTED:${s.id}:${ver(s.updated_at)}`, entity: { type: 'startup', id: s.id },
+    inApp: { type: 'CHANGES_REQUESTED', title: 'More information needed',
+             message: `The incubation cell asked for changes on "${s.title}".`, link: `/student/startup/${s.id}` },
+    email: { template: 'changes-requested', data: { startupTitle: s.title, requestedChanges: s.admin_remark || '', url: abs(`/student/startup/${s.id}`) } },
+  });
+});
+
+const rescheduleRequested = safe('rescheduleRequested', async (requestId) => {
+  const req = await one(`SELECT * FROM meeting_reschedule_requests WHERE id = $1`, [requestId]);
+  if (!req) return;
+  const m = await loadMeeting(req.meeting_id);
+  if (!m) return;
+  await notifyAdmins({
+    dedupeKey: `RESCHEDULE_REQUESTED:${req.id}`, entity: { type: 'startup_meeting', id: m.id },
+    inApp: { type: 'MEETING_RESCHEDULE_REQUESTED', title: 'Reschedule requested',
+             message: `${m.student_name} asked to reschedule the review for "${m.startup_title}".`, link: `/admin/meetings/${m.id}` },
+    email: { template: 'reschedule-requested-admin', data: { ...meetingCommon(m), studentName: m.student_name, reason: req.reason, url: abs(`/admin/meetings/${m.id}`) } },
+  });
+});
+
+const rescheduleRejected = safe('rescheduleRejected', async (requestId) => {
+  const req = await one(`SELECT * FROM meeting_reschedule_requests WHERE id = $1`, [requestId]);
+  if (!req || req.status !== 'REJECTED') return;
+  const m = await loadMeeting(req.meeting_id);
+  if (!m) return;
+  await deliver({
+    to: { id: m.student_id, name: m.student_name, email: m.student_email },
+    dedupeKey: `RESCHEDULE_REJECTED:${req.id}`, entity: { type: 'startup_meeting', id: m.id },
+    inApp: { type: 'MEETING_RESCHEDULE_REJECTED', title: 'Reschedule request update',
+             message: `Your reschedule request for "${m.startup_title}" wasn't approved. The original time stands.`, link: `/student/meetings/${m.id}` },
+    email: { template: 'reschedule-rejected', data: { ...meetingCommon(m), adminRemark: req.admin_remarks || '', url: abs(`/student/meetings/${m.id}`) } },
+  });
+});
+
+/** Scheduler entry point: reminds a student 24h before a live meeting. Idempotent via reminder_24h_sent_at. */
+const sendMeetingReminders = safe('sendMeetingReminders', async () => {
+  const due = (await db.query(
+    `SELECT id FROM startup_meetings
+     WHERE status IN ('SCHEDULED','CONFIRMED') AND reminder_24h_sent_at IS NULL
+       AND starts_at BETWEEN NOW() + INTERVAL '23 hours' AND NOW() + INTERVAL '25 hours'`)).rows;
+  let sent = 0;
+  for (const row of due) {
+    const m = await loadMeeting(row.id);
+    if (!m) continue;
+    const res = await deliver({
+      to: { id: m.student_id, name: m.student_name, email: m.student_email },
+      dedupeKey: `MEETING_REMINDER_24H:${m.id}`, entity: { type: 'startup_meeting', id: m.id },
+      inApp: { type: 'MEETING_REMINDER', title: 'Meeting tomorrow', message: `Your review meeting for "${m.startup_title}" is tomorrow at ${to12h(m.start_time)}.`, link: `/student/meetings/${m.id}` },
+      email: { template: 'meeting-reminder', data: { ...meetingCommon(m), url: abs(`/student/meetings/${m.id}`) } },
+    });
+    if (res === 'ok' || res === 'duplicate') await db.query(`UPDATE startup_meetings SET reminder_24h_sent_at = NOW() WHERE id = $1`, [m.id]);
+    if (res === 'ok') sent++;
+  }
+  return sent;
+});
+
 /* ═══════════════════ RESOURCE MANAGEMENT ═══════════════════════════════════
  * Same shape as everything above: routes pass an id, this loads the row(s)
  * itself, dedupeKey makes every call idempotent, and a failed email never
@@ -536,6 +680,8 @@ export default {
   userRegistered, passwordResetRequested, passwordChanged, userRoleChanged,
   startupSubmitted, startupReviewed, mentorAssigned, mentorRemoved,
   fundingSubmitted, fundingReviewed, mentorFeedbackAdded, progressUpdateAdded,
+  meetingScheduled, meetingRescheduled, meetingCancelled, meetingCompleted,
+  changesRequested, rescheduleRequested, rescheduleRejected, sendMeetingReminders,
   resourceRequestSubmitted, resourceRequestApproved, resourceRequestRejected,
   resourceIssued, resourceReturned, resourceIssueReported,
   resourceMaintenanceStarted, resourceMaintenanceCompleted,

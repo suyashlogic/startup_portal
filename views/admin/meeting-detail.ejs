@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title><%= title %> — IncuPortal</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+  <link rel="stylesheet" href="/css/style.css"/>
+</head>
+<body>
+<div class="app-layout">
+  <%- include('../layouts/sidebar') %>
+
+  <main class="app-main">
+    <div class="container-fluid px-4">
+
+      <div class="page-hero">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+          <div>
+            <h1 class="mb-2"><i class="bi bi-calendar3 me-2"></i><%= meeting.startup_title %></h1>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+              <span class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill" style="background:rgba(255,255,255,.18);color:#fff;font-size:.8rem;font-weight:600;">
+                <i class="bi bi-person-circle"></i> <%= meeting.student_name %>
+              </span>
+              <span class="badge badge-<%= meeting.status === 'COMPLETED' ? 'approved' : ['CANCELLED','NO_SHOW'].includes(meeting.status) ? 'rejected' : 'pending' %>">
+                <%= meeting.status.replace(/_/g,' ') %>
+              </span>
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="/admin/startup/<%= meeting.startup_id %>" class="btn"><i class="bi bi-rocket-takeoff me-1"></i> Startup</a>
+            <a href="/admin/meetings" class="btn"><i class="bi bi-arrow-left me-1"></i> Back</a>
+          </div>
+        </div>
+      </div>
+
+      <%- include('../layouts/flash') %>
+
+      <% if (meeting.pendingRequest) { %>
+        <div class="alert d-flex align-items-start gap-3 border-0 rounded-3 mb-4 py-3" style="background:#fef9ec;border-left:4px solid #f59e0b !important;border-radius:0 10px 10px 0 !important;">
+          <i class="bi bi-arrow-repeat flex-shrink-0 mt-1" style="color:#d97706;"></i>
+          <div style="font-size:.875rem;flex-grow:1;">
+            <strong><%= meeting.student_name %> has requested a reschedule:</strong> <%= meeting.pendingRequest.reason %>
+            <div class="mt-2 d-flex gap-2">
+              <span class="text-muted" style="font-size:.8rem;">To approve, pick a new time with "Reschedule meeting" below.</span>
+              <form action="/admin/meetings/<%= meeting.id %>/reschedule-requests/<%= meeting.pendingRequest.id %>/reject" method="POST" class="d-inline">
+                <input type="hidden" name="admin_remarks" value="Original time confirmed."/>
+                <button type="submit" class="btn btn-outline-danger btn-sm" style="font-size:.75rem;">Decline request</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      <% } %>
+
+      <div class="row g-4 align-items-start">
+        <div class="col-lg-6">
+
+          <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;">
+            <div class="card-body p-4">
+              <div class="card-section-title"><i class="bi bi-info-circle me-1"></i>Meeting details</div>
+              <table class="table table-sm mb-3" style="font-size:.85rem;">
+                <tbody>
+                  <tr><td class="text-muted" style="width:36%;">Date</td><td class="fw-semibold"><%= new Date(meeting.meeting_date).toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'}) %></td></tr>
+                  <tr><td class="text-muted">Time</td><td class="fw-semibold"><%= meeting.start_time.slice(0,5) %> – <%= meeting.end_time.slice(0,5) %> (IST)</td></tr>
+                  <tr><td class="text-muted">Type</td><td class="fw-semibold"><%= meeting.meeting_type.replace('_',' ') %></td></tr>
+                  <% if (meeting.location) { %><tr><td class="text-muted">Location</td><td class="fw-semibold"><%= meeting.location %></td></tr><% } %>
+                  <% if (meeting.meeting_link) { %><tr><td class="text-muted">Link</td><td class="fw-semibold"><a href="<%= meeting.meeting_link %>" target="_blank"><%= meeting.meeting_link %></a></td></tr><% } %>
+                  <tr><td class="text-muted">Reviewer</td><td class="fw-semibold"><%= meeting.reviewer_name || '—' %></td></tr>
+                </tbody>
+              </table>
+              <% if (meeting.agenda) { %><div class="mb-2"><div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">Agenda</div><p style="font-size:.85rem;color:#374151;"><%= meeting.agenda %></p></div><% } %>
+              <% if (meeting.notes) { %><div><div class="text-muted" style="font-size:.72rem;text-transform:uppercase;font-weight:700;">Notes</div><p style="font-size:.85rem;color:#374151;"><%= meeting.notes %></p></div><% } %>
+              <% if (meeting.cancel_reason) { %><div class="alert alert-danger border-0 mt-2" style="font-size:.82rem;"><strong>Cancelled:</strong> <%= meeting.cancel_reason %></div><% } %>
+
+              <% if (['SCHEDULED','CONFIRMED','RESCHEDULE_REQUESTED'].includes(meeting.status)) { %>
+                <div class="d-flex gap-2 pt-3 mt-3 border-top flex-wrap">
+                  <button class="btn btn-outline-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#rescheduleModal"><i class="bi bi-calendar-event me-1"></i>Reschedule meeting</button>
+                  <button class="btn btn-outline-danger btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#cancelModal"><i class="bi bi-x-circle me-1"></i>Cancel meeting</button>
+                  <form action="/admin/meetings/<%= meeting.id %>/no-show" method="POST" class="d-inline" onsubmit="return confirm('Mark this meeting as a no-show?');">
+                    <button type="submit" class="btn btn-outline-secondary btn-sm fw-semibold"><i class="bi bi-person-x me-1"></i>Mark no-show</button>
+                  </form>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+          <% if (meeting.outcome) { %>
+          <div class="card border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body p-4">
+              <div class="card-section-title"><i class="bi bi-clipboard-check me-1"></i>Recorded outcome</div>
+              <div class="d-flex gap-3 mb-2" style="font-size:.82rem;">
+                <span><i class="bi bi-<%= meeting.outcome.founder_attended ? 'check-circle-fill text-success' : 'x-circle text-muted' %> me-1"></i>Founder attended</span>
+                <span><i class="bi bi-<%= meeting.outcome.team_attended ? 'check-circle-fill text-success' : 'x-circle text-muted' %> me-1"></i>Team attended</span>
+              </div>
+              <% [['Discussion notes','discussion_notes'],['Strengths','strengths'],['Concerns','concerns'],['Action items','action_items']].forEach(f => { %>
+                <% if (meeting.outcome[f[1]]) { %>
+                  <div class="mb-2"><div class="text-muted" style="font-size:.7rem;text-transform:uppercase;font-weight:700;"><%= f[0] %></div>
+                  <p style="font-size:.84rem;color:#374151;white-space:pre-wrap;"><%= meeting.outcome[f[1]] %></p></div>
+                <% } %>
+              <% }); %>
+              <% if (meeting.outcome.recommendation) { %>
+                <span class="badge" style="background:#eff6ff;color:#1d4ed8;font-size:.72rem;">Recommendation: <%= meeting.outcome.recommendation.replace('_',' ') %></span>
+              <% } %>
+              <div class="text-muted mt-2" style="font-size:.72rem;">Recorded by <%= meeting.outcome.recorded_by_name %> on <%= new Date(meeting.outcome.recorded_at).toLocaleDateString('en-IN') %></div>
+            </div>
+          </div>
+          <% } else if (['SCHEDULED','CONFIRMED'].includes(meeting.status)) { %>
+          <div class="card border-0 shadow-sm" style="border-radius:14px;border-top:3px solid var(--ip-red) !important;">
+            <div class="card-body p-4">
+              <div class="card-section-title"><i class="bi bi-clipboard-check me-1"></i>Record outcome &amp; mark completed</div>
+              <form action="/admin/meetings/<%= meeting.id %>/complete" method="POST">
+                <div class="d-flex gap-3 mb-3">
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="founder_attended" id="fa"><label class="form-check-label" for="fa" style="font-size:.85rem;">Founder attended</label></div>
+                  <div class="form-check"><input class="form-check-input" type="checkbox" name="team_attended" id="ta"><label class="form-check-label" for="ta" style="font-size:.85rem;">Team attended</label></div>
+                </div>
+                <div class="mb-2"><label class="form-label fw-semibold" style="font-size:.82rem;">Discussion notes</label><textarea name="discussion_notes" class="form-control" rows="2"></textarea></div>
+                <div class="row g-2 mb-2">
+                  <div class="col-6"><label class="form-label fw-semibold" style="font-size:.82rem;">Strengths</label><textarea name="strengths" class="form-control" rows="2"></textarea></div>
+                  <div class="col-6"><label class="form-label fw-semibold" style="font-size:.82rem;">Concerns</label><textarea name="concerns" class="form-control" rows="2"></textarea></div>
+                </div>
+                <div class="mb-2"><label class="form-label fw-semibold" style="font-size:.82rem;">Action items</label><textarea name="action_items" class="form-control" rows="2"></textarea></div>
+                <div class="row g-2 mb-3">
+                  <div class="col-md-7">
+                    <label class="form-label fw-semibold" style="font-size:.82rem;">Recommendation</label>
+                    <select name="recommendation" class="form-select">
+                      <option value="">— Not specified —</option>
+                      <option value="APPROVE">Approve</option>
+                      <option value="REQUEST_CHANGES">Request changes</option>
+                      <option value="FOLLOW_UP">Schedule follow-up</option>
+                      <option value="REJECT">Reject</option>
+                    </select>
+                  </div>
+                  <div class="col-md-5"><label class="form-label fw-semibold" style="font-size:.82rem;">Next review date</label><input type="date" name="next_review_date" class="form-control"/></div>
+                </div>
+                <div class="alert alert-warning border-0" style="font-size:.78rem;background:#fef9ec;">
+                  <i class="bi bi-info-circle me-1"></i>This records the outcome only. Approve, request changes or reject the startup from its detail page.
+                </div>
+                <button type="submit" class="btn btn-primary fw-semibold px-4"><i class="bi bi-check-lg me-2"></i>Save outcome &amp; mark completed</button>
+              </form>
+            </div>
+          </div>
+          <% } %>
+        </div>
+
+        <div class="col-lg-6">
+          <div class="card border-0 shadow-sm" style="border-radius:14px;">
+            <div class="card-body p-4">
+              <div class="card-section-title"><i class="bi bi-clock-history me-1"></i>Startup meeting history</div>
+              <div class="d-flex flex-column gap-3">
+                <% history.forEach((h, i) => { %>
+                  <div class="d-flex gap-3">
+                    <div class="d-flex flex-column align-items-center flex-shrink-0" style="width:18px;">
+                      <div class="rounded-circle" style="width:10px;height:10px;background:<%= h.id === meeting.id ? 'var(--ip-red)' : '#9ca3af' %>;margin-top:4px;border:2px solid #fff;box-shadow:0 0 0 2px <%= h.id === meeting.id ? 'var(--ip-red)' : '#9ca3af' %>;"></div>
+                      <% if (i < history.length - 1) { %><div style="width:2px;flex:1;background:#e3e7ef;margin-top:4px;min-height:20px;"></div><% } %>
+                    </div>
+                    <div class="pb-2 flex-grow-1">
+                      <div class="text-muted mb-1" style="font-size:.72rem;font-weight:600;">
+                        <%= new Date(h.meeting_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %> · <%= h.start_time.slice(0,5) %>
+                      </div>
+                      <a href="/admin/meetings/<%= h.id %>" class="text-decoration-none">
+                        <div class="p-2 rounded-3" style="background:<%= h.id === meeting.id ? 'var(--ip-red-pale)' : '#f8f9fa' %>;border:1px solid #e3e7ef;font-size:.83rem;">
+                          <%= h.title %> <span class="badge badge-<%= h.status === 'COMPLETED' ? 'approved' : ['CANCELLED','NO_SHOW'].includes(h.status) ? 'rejected' : 'pending' %> ms-1"><%= h.status.replace(/_/g,' ') %></span>
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- Reschedule modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1"><div class="modal-dialog"><form action="/admin/meetings/<%= meeting.id %>/reschedule" method="POST" class="modal-content">
+  <div class="modal-header"><h6 class="modal-title fw-bold">Reschedule meeting</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body">
+    <div class="row g-2 mb-2">
+      <div class="col-6"><label class="form-label fw-semibold" style="font-size:.82rem;">Date <span class="text-danger">*</span></label><input type="date" name="meeting_date" class="form-control" required/></div>
+      <div class="col-3"><label class="form-label fw-semibold" style="font-size:.82rem;">Start <span class="text-danger">*</span></label><input type="time" name="start_time" class="form-control" required/></div>
+      <div class="col-3"><label class="form-label fw-semibold" style="font-size:.82rem;">End <span class="text-danger">*</span></label><input type="time" name="end_time" class="form-control" required/></div>
+    </div>
+    <div class="mb-2"><label class="form-label fw-semibold" style="font-size:.82rem;">Meeting type <span class="text-danger">*</span></label>
+      <select name="meeting_type" class="form-select" required onchange="toggleMeetingFields(this.value,'r')">
+        <option value="IN_PERSON">In person</option><option value="ONLINE">Online</option><option value="HYBRID">Hybrid</option>
+      </select></div>
+    <div class="mb-2" id="rLocationWrap"><label class="form-label fw-semibold" style="font-size:.82rem;">Location</label><input name="location" class="form-control" value="<%= meeting.location || '' %>"/></div>
+    <div class="mb-2" id="rLinkWrap" style="display:none;"><label class="form-label fw-semibold" style="font-size:.82rem;">Meeting link</label><input name="meeting_link" class="form-control" value="<%= meeting.meeting_link || '' %>"/></div>
+    <div><label class="form-label fw-semibold" style="font-size:.82rem;">Agenda</label><textarea name="agenda" class="form-control" rows="2"><%= meeting.agenda || '' %></textarea></div>
+  </div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button class="btn btn-primary fw-semibold">Save new time</button></div>
+</form></div></div>
+
+<!-- Cancel modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1"><div class="modal-dialog"><form action="/admin/meetings/<%= meeting.id %>/cancel" method="POST" class="modal-content">
+  <div class="modal-header"><h6 class="modal-title fw-bold">Cancel meeting</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body"><label class="form-label fw-semibold" style="font-size:.85rem;">Reason <span class="text-danger">*</span></label>
+    <textarea name="reason" class="form-control" rows="3" required placeholder="e.g. Reviewer unavailable; will reschedule shortly."></textarea></div>
+  <div class="modal-footer"><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Back</button><button class="btn btn-danger fw-semibold">Cancel meeting</button></div>
+</form></div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+function toggleMeetingFields(type, prefix) {
+  var loc = document.getElementById(prefix + 'LocationWrap');
+  var link = document.getElementById(prefix + 'LinkWrap');
+  if (!loc || !link) return;
+  loc.style.display = type === 'ONLINE' ? 'none' : '';
+  link.style.display = type === 'IN_PERSON' ? 'none' : '';
+}
+</script>
+</body>
+</html>

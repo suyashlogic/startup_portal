@@ -93,6 +93,28 @@
 
       </div><!-- /stats row -->
 
+      <!-- ── Upcoming startup review meeting ── -->
+      <% if (typeof upcomingMeeting !== 'undefined' && upcomingMeeting) { %>
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:14px;border-top:3px solid #f59e0b !important;">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+              <div>
+                <div class="card-section-title mb-2"><i class="bi bi-calendar-event me-1"></i>Upcoming startup review meeting</div>
+                <div class="fw-bold" style="font-size:1rem;color:#111;">
+                  📅 <%= new Date(upcomingMeeting.meeting_date).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) %>
+                  &nbsp;⏰ <%= upcomingMeeting.start_time.slice(0,5) %> – <%= upcomingMeeting.end_time.slice(0,5) %>
+                </div>
+                <div class="text-muted mt-1" style="font-size:.85rem;">
+                  <%= upcomingMeeting.startup_title %> ·
+                  <% if (upcomingMeeting.meeting_type === 'ONLINE') { %>📷 Online<% } else { %>📍 <%= upcomingMeeting.location %><% } %>
+                </div>
+              </div>
+              <a href="/student/meetings/<%= upcomingMeeting.id %>" class="btn btn-primary btn-sm fw-semibold align-self-start">View details</a>
+            </div>
+          </div>
+        </div>
+      <% } %>
+
       <!-- ── Startup List Card ── -->
       <div class="card border-0 shadow-sm" style="border-radius:14px;">
         <div class="card-body p-0">
@@ -163,11 +185,11 @@
                       <span class="badge badge-<%= s.stage %>"><%= s.stage %></span>
                     </td>
                     <td>
-                      <span class="badge badge-<%= s.status %> d-inline-flex align-items-center gap-1">
+                      <span class="badge badge-<%= ['approved','meeting_completed'].includes(s.status) ? 'approved' : s.status === 'rejected' ? 'rejected' : 'pending' %> d-inline-flex align-items-center gap-1">
                         <% if (s.status === 'approved') { %><i class="bi bi-check-circle-fill" style="font-size:.65rem;"></i>
                         <% } else if (s.status === 'rejected') { %><i class="bi bi-x-circle-fill" style="font-size:.65rem;"></i>
                         <% } else { %><i class="bi bi-clock" style="font-size:.65rem;"></i><% } %>
-                        <%= s.status %>
+                        <%= s.status.replace(/_/g,' ') %>
                       </span>
                     </td>
                     <td>

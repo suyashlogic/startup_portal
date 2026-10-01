@@ -5,6 +5,8 @@ import { requireStudent } from '../middleware/authMiddleware.js';
 import notificationService from '../service/notificationService.js';
 import { audit } from '../service/auditService.js';
 import fs from 'fs/promises';
+import { studentUpcomingMeeting } from '../service/meetingQueries.js';
+import { getHistory as getMeetingHistory } from '../service/meetingService.js';
 
 const router = express.Router();
 
@@ -22,15 +24,18 @@ async function ownedStartup(startupId, studentId) {
 }
 
 // ── GET /student/dashboard ───────────────────────────────────────
-// dashboard.ejs expects: startups[], stats.{ total, pending, approved, rejected }
+// dashboard.ejs expects: startups[], stats.{ total, pending, approved, rejected }, upcomingMeeting
 router.get('/dashboard', requireStudent, async (req, res) => {
   try {
-    const startups = await db.query(
-      `SELECT * FROM startups
-       WHERE student_id = $1 AND is_deleted = false
-       ORDER BY created_at DESC`,
-      [req.user.id]
-    );
+    const [startups, upcomingMeeting] = await Promise.all([
+      db.query(
+        `SELECT * FROM startups
+         WHERE student_id = $1 AND is_deleted = false
+         ORDER BY created_at DESC`,
+        [req.user.id]
+      ),
+      studentUpcomingMeeting(req.user.id)
+    ]);
 
     const rows = startups.rows;
     const stats = {
@@ -43,7 +48,8 @@ router.get('/dashboard', requireStudent, async (req, res) => {
     res.render('student/dashboard', {
       title: 'Student Dashboard',
       startups: rows,
-      stats
+      stats,
+      upcomingMeeting
     });
   } catch (err) {
     console.error('Student dashboard error:', err);
@@ -130,7 +136,7 @@ router.post('/startup/new', requireStudent, upload.single('pitch_deck'), async (
 
 // ── GET /student/startup/:id ─────────────────────────────────────
 // startup-detail.ejs expects:
-//   startup, mentors[], progress[], feedback[], funding[]
+//   startup, mentors[], progress[], feedback[], funding[], meetings[]
 router.get('/startup/:id', requireStudent, async (req, res) => {
   try {
     const startupResult = await db.query(
@@ -146,7 +152,7 @@ router.get('/startup/:id', requireStudent, async (req, res) => {
 
     const startup = startupResult.rows[0];
 
-    const [mentorsResult, progressResult, feedbackResult, fundingResult] = await Promise.all([
+    const [mentorsResult, progressResult, feedbackResult, fundingResult, meetings] = await Promise.all([
       db.query(
         `SELECT u.id, u.name, u.email
          FROM mentor_assignments ma
@@ -175,7 +181,8 @@ router.get('/startup/:id', requireStudent, async (req, res) => {
          WHERE startup_id = $1
          ORDER BY created_at DESC`,
         [req.params.id]
-      )
+      ),
+      getMeetingHistory(req.params.id)
     ]);
 
     res.render('student/startup-detail', {
@@ -184,7 +191,8 @@ router.get('/startup/:id', requireStudent, async (req, res) => {
       mentors:  mentorsResult.rows,
       progress: progressResult.rows,
       feedback: feedbackResult.rows,
-      funding:  fundingResult.rows
+      funding:  fundingResult.rows,
+      meetings
     });
   } catch (err) {
     console.error('Startup detail error:', err);

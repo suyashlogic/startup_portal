@@ -1,0 +1,5 @@
+<p>Reminder: your review meeting for <strong><%= startupTitle %></strong> is coming up.</p>
+<p><strong>When:</strong> <%= dateLabel %>, <%= timeLabel %> (IST)</p>
+<% if (meetingType === 'ONLINE') { %><p><strong>Where:</strong> Online — the link is on your dashboard.</p>
+<% } else { %><p><strong>Where:</strong> <%= location %></p><% } %>
+<p>See you there!</p>

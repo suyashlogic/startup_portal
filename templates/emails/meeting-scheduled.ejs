@@ -1,0 +1,11 @@
+<p>A review meeting for <strong><%= startupTitle %></strong> has been scheduled.</p>
+<p><strong>When:</strong> <%= dateLabel %>, <%= timeLabel %> (IST)</p>
+<% if (meetingType === 'ONLINE') { %>
+<p><strong>Where:</strong> Online — the link is in the details below.</p>
+<% } else if (meetingType === 'HYBRID') { %>
+<p><strong>Where:</strong> <%= location %> (also available online — link below).</p>
+<% } else { %>
+<p><strong>Where:</strong> <%= location %></p>
+<% } %>
+<% if (locals.agenda) { %><p style="border-left:3px solid #F1AB27;padding-left:12px;color:#662C11;"><em>Agenda:</em> <%= agenda %></p><% } %>
+<p>Please be on time — come prepared to walk the reviewer through your idea.</p>

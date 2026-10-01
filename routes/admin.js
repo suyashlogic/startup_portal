@@ -5,6 +5,8 @@ import notificationService from '../service/notificationService.js';
 import { audit, recentActivity } from '../service/auditService.js';
 import { unreadCount } from '../service/notificationStore.js';
 import { TEMPLATE_KEYS } from '../service/emailTemplates.js';
+import * as M from '../service/meetingService.js';
+import { adminMeetingStats } from '../service/meetingQueries.js';
 
 const router = express.Router();
 
@@ -62,11 +64,12 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
     );
     fundingStats.pending = parseInt(pendingFunding.rows[0].count);
 
-    const [failedEmails, unread, activity] = await Promise.all([
+    const [failedEmails, unread, activity, meetingStats] = await Promise.all([
       db.query(`SELECT COUNT(*)::int AS n FROM email_logs
                 WHERE status = 'failed' AND created_at > NOW() - INTERVAL '7 days'`),
       unreadCount(req.user.id),
-      recentActivity(8)
+      recentActivity(8),
+      adminMeetingStats()
     ]);
 
     res.render('admin/dashboard', {
@@ -77,7 +80,8 @@ router.get('/dashboard', requireAdmin, async (req, res) => {
         funding:  fundingStats
       },
       ops: { failedEmails: failedEmails.rows[0].n, unread, activity },
-      recentStartups: recentResult.rows
+      recentStartups: recentResult.rows,
+      meetingStats
     });
   } catch (err) {
     console.error('Admin dashboard error:', err);
@@ -133,7 +137,7 @@ router.get('/startups', requireAdmin, async (req, res) => {
 
 // ── GET /admin/startup/:id ───────────────────────────────────────
 // startup-detail.ejs expects:
-//   startup, mentors[], assignedMentors[], progress[], feedback[], funding[]
+//   startup, mentors[], assignedMentors[], progress[], feedback[], funding[], meetings[]
 router.get('/startup/:id', requireAdmin, async (req, res) => {
   try {
     const startupResult = await db.query(
@@ -149,7 +153,7 @@ router.get('/startup/:id', requireAdmin, async (req, res) => {
       return res.redirect('/admin/startups');
     }
 
-    const [mentors, assignedMentors, progress, feedback, funding] = await Promise.all([
+    const [mentors, assignedMentors, progress, feedback, funding, meetings] = await Promise.all([
       db.query("SELECT id, name, email FROM users WHERE role = 'mentor' ORDER BY name"),
       db.query(
         `SELECT u.id, u.name, u.email
@@ -179,7 +183,8 @@ router.get('/startup/:id', requireAdmin, async (req, res) => {
          WHERE startup_id = $1
          ORDER BY created_at DESC`,
         [req.params.id]
-      )
+      ),
+      M.getHistory(req.params.id)
     ]);
 
     res.render('admin/startup-detail', {
@@ -189,7 +194,8 @@ router.get('/startup/:id', requireAdmin, async (req, res) => {
       assignedMentors: assignedMentors.rows,
       progress:        progress.rows,
       feedback:        feedback.rows,
-      funding:         funding.rows
+      funding:         funding.rows,
+      meetings
     });
   } catch (err) {
     console.error('Admin startup detail error:', err);

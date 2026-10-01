@@ -1,13 +1,3 @@
-/**
- * emailService: the ONLY module that talks to Nodemailer.
- *
- * Responsibilities: render a template, write an email_logs row, send, record
- * the outcome. It NEVER throws: callers get { status: 'sent' | 'failed' | 'duplicate' }.
- *
- * Config: SMTP_HOST / SMTP_PORT / SMTP_USER / SMTP_PASS / EMAIL_FROM / EMAIL_FROM_NAME.
- * The legacy names (EMAIL_HOST / EMAIL_PORT / EMAIL_USER / EMAIL_PASSWORD) still
- * work, so existing .env files keep functioning.
- */
 import 'dotenv/config';
 import nodemailer from 'nodemailer';
 import db from '../config/db.js';
